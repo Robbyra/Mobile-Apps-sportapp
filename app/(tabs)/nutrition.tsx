@@ -4,7 +4,7 @@ export default function DashboardScreen() {
   return (
     // bg-background is defined in your tailwind.config.js as #0F0F0F
     <SafeAreaView className="flex-1 bg-background justify-center items-center">
-      <Text className="text-white text-2xl font-bold">Dashboard</Text>
+      <Text className="text-white text-2xl font-bold">Voeding</Text>
       <Text className="text-primary text-lg mt-2">Welkom bij FitCircle</Text>
     </SafeAreaView>
   );
