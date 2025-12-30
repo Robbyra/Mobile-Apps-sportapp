@@ -6,16 +6,16 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // We hide the top header (we make our own)
+        headerShown: false, // we verwijderen de header voor een schonere look
         tabBarStyle: {
-          backgroundColor: '#0F0F0F', // Dark background matching your Figma
-          borderTopColor: '#1E1E1E',  // Subtle border line
+          backgroundColor: '#0F0F0F', // donkere achtergrond
+          borderTopColor: '#1E1E1E',  // een subtiele border
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
         },
-        tabBarActiveTintColor: '#FF4D4D', // Your red accent color
-        tabBarInactiveTintColor: '#A0A0A0', // Gray for inactive tabs
+        tabBarActiveTintColor: '#FF4D4D', // rode accenten voor actieve tabs
+        tabBarInactiveTintColor: '#A0A0A0', // grijze accenten voor inactieve tabs
       }}
     >
       <Tabs.Screen
