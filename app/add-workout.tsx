@@ -1,57 +1,82 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 export default function AddWorkoutScreen() {
-  const router = useRouter(); // De controller van je app
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  // Hier houden we bij wat de gebruiker typet
-  const [oefening, setOefening] = useState('');
+  // State for the form fields
+  const [title, setTitle] = useState('');
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
-  const [gewicht, setGewicht] = useState('');
+  const [weight, setWeight] = useState('');
 
-  // Functie die wordt uitgevoerd als je op de rode knop drukt
-  const handleToevoegen = () => {
-    // Checked of alles wat nodig is ingevuld is
-    if (!oefening || !sets || !reps) {
-      Alert.alert("Oeps", "Vul minstens de oefening, sets en reps in.");
+  // Function to save data to Firebase
+  const handleSave = async () => {
+    // Checks if fields are filled
+    if (!title || !sets || !reps) {
+      Alert.alert('Fout', 'Vul in ieder geval de naam, sets en reps in.');
       return;
     }
 
-    // logged in console moet nog data base opslaan
-    console.log("Nieuwe workout:", { oefening, sets, reps, gewicht });
+    setLoading(true);
 
-    // Toon een bevestiging en ga terug naar het dashboard
-    Alert.alert("Succes", "Workout toegevoegd!", [
-      { text: "OK", onPress: () => router.back() } // Gaat terug naar vorige scherm
-    ]);
+    try {
+      // Send data to the 'workouts' collection in the databaser
+        await addDoc(collection(db, 'workouts'), {
+        title: title,
+        sets: Number(sets),
+        reps: Number(reps),
+        weight: Number(weight) || 0,
+        date: new Date().toLocaleDateString('nl-NL'), 
+        
+        timestamp: new Date()
+      });
+
+      // Goes back to the list
+      setLoading(false);
+      router.back(); 
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Kon de workout niet opslaan.');
+      setLoading(false);
+    }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="p-4">
-        
-        <Text className="text-white text-3xl font-bold mb-2">Workout toevoegen</Text>
-        <Text className="text-gray-400 mb-8">Log je training en hou je voortgang bij</Text>
+    <SafeAreaView className="flex-1 bg-background p-4">
+      {/* Header with Back Button */}
+      <View className="flex-row items-center mb-6">
+        <TouchableOpacity onPress={() => router.back()} className="mr-4">
+          <Ionicons name="arrow-back" size={24} color="#FF4D4D" />
+        </TouchableOpacity>
+        <Text className="text-white text-2xl font-bold">Nieuwe Workout</Text>
+      </View>
 
-        <View className="mb-4">
-          <Text className="text-gray-300 mb-2 font-semibold">Oefening</Text>
-          <TextInput
-            className="bg-surface text-white border border-gray-800 rounded-xl p-4 text-lg"
-            placeholder="Bv. Bench press"
+      {/* Form Fields */}
+      <View className="gap-4">
+        <View>
+          <Text className="text-gray-400 mb-2 ml-1">Oefening Naam</Text>
+          <TextInput 
+            className="bg-surface text-white p-4 rounded-xl border border-gray-800"
+            placeholder="Bijv. Bench Press"
             placeholderTextColor="#666"
-            value={oefening}
-            onChangeText={setOefening} // Update de state als je typt
+            value={title}
+            onChangeText={setTitle}
           />
         </View>
 
-        <View className="flex-row justify-between mb-4 gap-2">
+        <View className="flex-row gap-4">
           <View className="flex-1">
-            <Text className="text-gray-300 mb-2 font-semibold">Sets</Text>
-            <TextInput
-              className="bg-surface text-white border border-gray-800 rounded-xl p-4 text-lg text-center"
+            <Text className="text-gray-400 mb-2 ml-1">Sets</Text>
+            <TextInput 
+              className="bg-surface text-white p-4 rounded-xl border border-gray-800"
               placeholder="0"
               placeholderTextColor="#666"
               keyboardType="numeric"
@@ -60,9 +85,9 @@ export default function AddWorkoutScreen() {
             />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-300 mb-2 font-semibold">Reps</Text>
-            <TextInput
-              className="bg-surface text-white border border-gray-800 rounded-xl p-4 text-lg text-center"
+            <Text className="text-gray-400 mb-2 ml-1">Reps</Text>
+            <TextInput 
+              className="bg-surface text-white p-4 rounded-xl border border-gray-800"
               placeholder="0"
               placeholderTextColor="#666"
               keyboardType="numeric"
@@ -71,46 +96,31 @@ export default function AddWorkoutScreen() {
             />
           </View>
           <View className="flex-1">
-            <Text className="text-gray-300 mb-2 font-semibold">Kg</Text>
-            <TextInput
-              className="bg-surface text-white border border-gray-800 rounded-xl p-4 text-lg text-center"
+            <Text className="text-gray-400 mb-2 ml-1">KG</Text>
+            <TextInput 
+              className="bg-surface text-white p-4 rounded-xl border border-gray-800"
               placeholder="0"
               placeholderTextColor="#666"
               keyboardType="numeric"
-              value={gewicht}
-              onChangeText={setGewicht}
+              value={weight}
+              onChangeText={setWeight}
             />
           </View>
         </View>
 
-        <View className="mb-8">
-          <Text className="text-gray-300 mb-2 font-semibold">Commentaar</Text>
-          <TextInput
-            className="bg-surface text-white border border-gray-800 rounded-xl p-4 text-lg h-32"
-            placeholder="Optioneel..."
-            placeholderTextColor="#666"
-            multiline={true}
-            textAlignVertical="top" // Zorgt dat tekst linksboven begint
-          />
-        </View>
-
-        <View className="flex-row gap-4">
-          <TouchableOpacity 
-            className="bg-primary flex-1 py-4 rounded-xl items-center"
-            onPress={handleToevoegen}
-          >
-            <Text className="text-white font-bold text-lg">Toevoegen</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            className="bg-surface border border-gray-700 flex-1 py-4 rounded-xl items-center"
-            onPress={() => router.back()} // Gaat terug zonder op te slaan
-          >
-            <Text className="text-white font-bold text-lg">Terug</Text>
-          </TouchableOpacity>
-        </View>
-
-      </ScrollView>
+        {/* Save Button */}
+        <TouchableOpacity 
+          className="bg-primary p-4 rounded-xl mt-6 items-center"
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-white font-bold text-lg">Opslaan</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
