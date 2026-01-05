@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import PostToSocialModal from '@/components/PostToSocialModal';
 import WorkoutCard, { WorkoutItem } from '@/components/WorkoutCard';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Firebase imports
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 
 export default function WorkoutsScreen() {
   const router = useRouter();
+  const currentUserId = 'user-123';
+  const currentUserName = 'Jouw Naam';
 
-  // State to store the list of workouts and the loading status
   const [workouts, setWorkouts] = useState<WorkoutItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutItem | null>(null);
+  const [showPostModal, setShowPostModal] = useState(false);
 
-  // useEffect to set up the real-time connection with Firebase
   useEffect(() => {
-    // onSnapshot listens for real-time updates in the 'workouts' collection
     const unsubscribe = onSnapshot(collection(db, 'workouts'), (snapshot) => {
-      
-      // Maps the Firestore documents to our WorkoutItem type
       const liveData = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
-          id: doc.id, // Gets the document ID from Firestore
+          id: doc.id,
           title: data.title || 'Untitled Workout',
           sets: data.sets || 0,
           reps: data.reps || 0,
@@ -33,16 +32,13 @@ export default function WorkoutsScreen() {
         } as WorkoutItem;
       });
 
-      // Updates state with the new data and stop the loading spinner
       setWorkouts(liveData);
       setLoading(false);
     });
 
-    // Cleanup function to unsubscribe from the listener when the component unmounts
     return () => unsubscribe();
   }, []);
 
-  // Shows a loading spinner while data is being fetched
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
@@ -54,7 +50,6 @@ export default function WorkoutsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
-      {/* Header section with Title and 'New' button */}
       <View className="flex-row justify-between items-center mb-6">
         <Text className="text-white text-3xl font-bold">Workouts</Text>
         <TouchableOpacity 
@@ -69,7 +64,22 @@ export default function WorkoutsScreen() {
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <WorkoutCard item={item} />}
+        renderItem={({ item }) => (
+          <View className="flex-row items-center gap-3 mb-3">
+            <View className="flex-1">
+              <WorkoutCard item={item} />
+            </View>
+            <TouchableOpacity
+              className="bg-primary px-3 py-4 rounded-lg items-center justify-center"
+              onPress={() => {
+                setSelectedWorkout(item);
+                setShowPostModal(true);
+              }}
+            >
+              <Text className="text-white font-bold text-xs">Post</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         showsVerticalScrollIndicator={false}
         // Component to render when the list is empty
         ListEmptyComponent={
@@ -81,6 +91,15 @@ export default function WorkoutsScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+      {selectedWorkout && (
+        <PostToSocialModal
+          visible={showPostModal}
+          onClose={() => setShowPostModal(false)}
+          type="workout"
+          item={selectedWorkout}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+        />
+      )}    </SafeAreaView>
   );
 }

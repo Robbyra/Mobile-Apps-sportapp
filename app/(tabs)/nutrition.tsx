@@ -1,16 +1,21 @@
 import NutritionCard, { NutritionItem } from '@/components/NutriotionCard';
+import PostToSocialModal from '@/components/PostToSocialModal';
 import { db } from '@/firebaseConfig';
 import { useRouter } from 'expo-router';
-import { onSnapshot, collection } from 'firebase/firestore';
-import React, { useState, useEffect } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const currentUserId = 'user-123';
+  const currentUserName = 'Jouw Naam';
 
   const [meals, setMeals] = useState<NutritionItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMeal, setSelectedMeal] = useState<NutritionItem | null>(null);
+  const [showPostModal, setShowPostModal] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'nutrition'), (snapshot) => {
@@ -45,8 +50,6 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
-      
-      {/* HEADER */}
       <View className="flex-row justify-between items-center mb-6">
         <Text className="text-white text-3xl font-bold">Voeding</Text>
         <TouchableOpacity
@@ -57,11 +60,25 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* LIST */}
       <FlatList
         data={meals}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <NutritionCard item={item} />}
+        renderItem={({ item }) => (
+          <View className="flex-row items-center gap-3 mb-3">
+            <View className="flex-1">
+              <NutritionCard item={item} />
+            </View>
+            <TouchableOpacity
+              className="bg-primary px-3 py-4 rounded-lg items-center justify-center"
+              onPress={() => {
+                setSelectedMeal(item);
+                setShowPostModal(true);
+              }}
+            >
+              <Text className="text-white font-bold text-xs">Post</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View className="mt-10 items-center">
@@ -72,6 +89,17 @@ export default function DashboardScreen() {
           </View>
         }
       />
+
+      {selectedMeal && (
+        <PostToSocialModal
+          visible={showPostModal}
+          onClose={() => setShowPostModal(false)}
+          type="meal"
+          item={selectedMeal}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+        />
+      )}
     </SafeAreaView>
   );
 }
