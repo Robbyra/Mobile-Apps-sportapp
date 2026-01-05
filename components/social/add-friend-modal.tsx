@@ -1,6 +1,8 @@
+import { db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { arrayUnion, collection, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface Friend {
   id: string;
@@ -15,32 +17,58 @@ interface AddFriendModalProps {
   existingFriends: Friend[];
 }
 
-const SUGGESTED_USERS = [
-  { id: '1', name: 'Jan Jansen' },
-  { id: '2', name: 'Marie Pieters' },
-  { id: '3', name: 'Thomas Groot' },
-  { id: '4', name: 'Lisa van den Berg' },
-  { id: '5', name: 'Marco Rossi' },
-  { id: '6', name: 'Emma Schmidt' },
-];
-
 export default function AddFriendModal({
   visible,
   onClose,
   onAddFriend,
   existingFriends,
 }: AddFriendModalProps) {
+  const currentUserId = 'user-123';
   const [searchQuery, setSearchQuery] = useState('');
+  const [allUsers, setAllUsers] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredUsers = SUGGESTED_USERS.filter((user) =>
+  useEffect(() => {
+    if (!visible) return;
+
+    const q = query(collection(db, 'users'), orderBy('name', 'asc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const users: Friend[] = [];
+      snapshot.forEach((doc) => {
+        users.push({
+          id: doc.id,
+          name: doc.data().name,
+          image: doc.data().image
+        });
+      });
+      setAllUsers(users);
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, [visible]);
+
+  const filteredUsers = allUsers.filter((user) =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const isFriend = (userId: string) => existingFriends.some((f) => f.id === userId);
 
-  const handleAddFriend = (user: Friend) => {
-    onAddFriend(user);
-    setSearchQuery('');
+  const handleAddFriend = async (user: Friend) => {
+    try {
+      await updateDoc(doc(db, 'users', currentUserId), {
+        friends: arrayUnion(user.id)
+      });
+      
+      await updateDoc(doc(db, 'users', user.id), {
+        friends: arrayUnion(currentUserId)
+      });
+
+      onAddFriend(user);
+      setSearchQuery('');
+    } catch (error) {
+      console.error('Fout bij toevoegen vriend:', error);
+    }
   };
 
   const renderUserItem = ({ item }: { item: Friend }) => (
@@ -97,12 +125,19 @@ export default function AddFriendModal({
           </View>
         </View>
 
-        <FlatList
-          data={filteredUsers}
-          renderItem={renderUserItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 0 }}
-        />
+        {loading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" color="#FF4D4D" />
+            <Text className="text-white mt-4">Gebruikers laden...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredUsers}
+            renderItem={renderUserItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingHorizontal: 0 }}
+          />
+        )}
       </View>
     </Modal>
   );

@@ -1,9 +1,11 @@
 import AddFriendModal from '@/components/social/add-friend-modal';
 import PostCard from '@/components/social/post-card';
+import { db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { arrayRemove, arrayUnion, collection, doc, limit, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Friend {
@@ -26,103 +28,124 @@ interface Post {
   timestamp: string;
 }
 
-const INITIAL_POSTS: Post[] = [
-  {
-    id: '1',
-    authorId: '101',
-    authorName: 'Jan Jansen',
-    type: 'workout',
-    title: 'Ochtend run 🏃',
-    description: '5K snelle tempo run in het park',
-    stats: '5,2 km — 26 minuten',
-    caloriesBurned: 380,
-    likes: 24,
-    timestamp: '2u geleden',
-  },
-  {
-    id: '2',
-    authorId: '102',
-    authorName: 'Marie Pieters',
-    type: 'meal',
-    title: 'Gezonde acaibowl',
-    description: 'Verse acai bowl met noten en granola',
-    stats: 'Ontbijt — 450 kcal',
-    likes: 18,
-    timestamp: '1u geleden',
-  },
-  {
-    id: '3',
-    authorId: '103',
-    authorName: 'Thomas Groot',
-    type: 'workout',
-    title: 'Krachttraining benen',
-    description: 'Intensieve sessie: squats, lunges, leg press',
-    stats: '45 minuten — Benen',
-    caloriesBurned: 460,
-    likes: 32,
-    timestamp: '3u geleden',
-  },
-  {
-    id: '4',
-    authorId: '104',
-    authorName: 'Lisa van den Berg',
-    type: 'meal',
-    title: 'Gezonde griekse salade',
-    description: 'Feta, olijven, tomaten en komkommer',
-    stats: 'Lunch — 280 kcal',
-    likes: 15,
-    timestamp: '5u geleden',
-  },
-  {
-    id: '5',
-    authorId: '105',
-    authorName: 'Marco Rossi',
-    type: 'workout',
-    title: 'Yoga sessie',
-    description: 'Hatha yoga voor flexibiliteit en ontspanning',
-    stats: '60 minuten',
-    likes: 28,
-    timestamp: '6u geleden',
-  },
-];
-
 export default function SocialScreen() {
   const router = useRouter();
+  const currentUserId = 'user-123';
   const [activeTab, setActiveTab] = useState<'feed' | 'friends'>('feed');
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
-  const [friends, setFriends] = useState<Friend[]>([
-    { id: '101', name: 'Jan Jansen' },
-    { id: '102', name: 'Marie Pieters' },
-  ]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(true);
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [savedPosts, setSavedPosts] = useState<string[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
 
-  const handleAddFriend = (user: Friend) => {
-    if (!friends.some((f) => f.id === user.id)) {
-      setFriends([...friends, user]);
+  useEffect(() => {
+    const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'), limit(50));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedPosts: Post[] = [];
+      snapshot.forEach((doc) => {
+        fetchedPosts.push({ id: doc.id, ...doc.data() } as Post);
+      });
+      setPosts(fetchedPosts);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, 'users'), limit(20));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedFriends: Friend[] = [];
+      snapshot.forEach((doc) => {
+        fetchedFriends.push({ 
+          id: doc.id, 
+          name: doc.data().name,
+          image: doc.data().image
+        });
+      });
+      setFriends(fetchedFriends);
+      setLoadingFriends(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleAddFriend = async (user: Friend) => {
+    try {
+      await updateDoc(doc(db, 'users', currentUserId), {
+        friends: arrayUnion(user.id)
+      });
+      
+      await updateDoc(doc(db, 'users', user.id), {
+        friends: arrayUnion(currentUserId)
+      });
+
+      if (!friends.some((f) => f.id === user.id)) {
+        setFriends([...friends, user]);
+      }
+    } catch (error) {
+      console.error('Fout bij toevoegen vriend:', error);
     }
   };
 
-  const handleLikePost = (postId: string) => {
-    setLikedPosts((prev) =>
-      prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
-    );
+  const handleLikePost = async (postId: string) => {
+    try {
+      const isLiked = likedPosts.includes(postId);
+      
+      if (isLiked) {
+        await updateDoc(doc(db, 'posts', postId), {
+          likes: Math.max(0, (posts.find(p => p.id === postId)?.likes || 1) - 1)
+        });
+        setLikedPosts((prev) => prev.filter((id) => id !== postId));
+      } else {
+        await updateDoc(doc(db, 'posts', postId), {
+          likes: (posts.find(p => p.id === postId)?.likes || 0) + 1
+        });
+        setLikedPosts((prev) => [...prev, postId]);
+      }
+    } catch (error) {
+      console.error('Fout bij liken post:', error);
+    }
   };
 
-  const handleSavePost = (postId: string) => {
-    setSavedPosts((prev) =>
-      prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
-    );
+  const handleSavePost = async (postId: string) => {
+    try {
+      const isSaved = savedPosts.includes(postId);
+      
+      if (isSaved) {
+        await updateDoc(doc(db, 'users', currentUserId), {
+          savedPosts: arrayRemove(postId)
+        });
+        setSavedPosts((prev) => prev.filter((id) => id !== postId));
+      } else {
+        await updateDoc(doc(db, 'users', currentUserId), {
+          savedPosts: arrayUnion(postId)
+        });
+        setSavedPosts((prev) => [...prev, postId]);
+      }
+    } catch (error) {
+      console.error('Fout bij opslaan post:', error);
+    }
   };
 
   const handlePressFriend = (friend: Friend) => {
     setSelectedFriend(friend);
   };
 
-  const friendPosts = INITIAL_POSTS.filter(
+  const friendPosts = posts.filter(
     (post) => post.authorId === selectedFriend?.id
   );
+
+  if (loading || loadingFriends) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color="#FF4D4D" />
+        <Text className="text-white mt-4">Laden...</Text>
+      </SafeAreaView>
+    );
+  }
+
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -171,7 +194,7 @@ export default function SocialScreen() {
 
       {activeTab === 'feed' ? (
         <FlatList
-          data={INITIAL_POSTS}
+          data={posts}
           renderItem={({ item }) => (
             <PostCard
               {...item}
