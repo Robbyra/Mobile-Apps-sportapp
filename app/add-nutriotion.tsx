@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Ionicons } from '@expo/vector-icons';
 
 // Firebase
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -33,6 +34,8 @@ export default function AddNutritionScreen() {
         carbs: Number(carbs) || 0,
         fats: Number(fats) || 0,
         createdAt: serverTimestamp(),
+        // Datum toevoegen voor sortering op dashboard
+        date: new Date().toLocaleDateString('nl-NL') 
       });
 
       router.back(); // ga terug naar nutrition lijst
@@ -46,9 +49,16 @@ export default function AddNutritionScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
-      <Text className="text-white text-3xl font-bold mb-6">
-        Voeg voeding toe
-      </Text>
+      
+      {/* --- HEADER MET TERUG KNOP --- */}
+      <View className="flex-row items-center mb-6">
+        <TouchableOpacity onPress={() => router.back()} className="mr-4">
+          <Ionicons name="arrow-back" size={24} color="#FF4D4D" />
+        </TouchableOpacity>
+        <Text className="text-white text-3xl font-bold">
+          Voeg voeding toe
+        </Text>
+      </View>
 
       {/* NAAM */}
       <View className="mb-4">
@@ -77,7 +87,7 @@ export default function AddNutritionScreen() {
 
       {/* MACROS */}
       <View className="flex-row justify-between mb-6">
-        {/* EIWT */}
+        {/* EIWIT */}
         <View className="flex-1 mx-1">
           <Text className="text-gray-400 mb-1 text-center">Eiwit (g)</Text>
           <TextInput
@@ -93,7 +103,7 @@ export default function AddNutritionScreen() {
         {/* KOOLHYDRATEN */}
         <View className="flex-1 mx-1">
           <Text className="text-gray-400 mb-1 text-center">
-            Koolhydraten (g)
+            Koolh. (g)
           </Text>
           <TextInput
             className="bg-surface text-white p-4 rounded-xl border border-gray-800 text-center"
@@ -127,9 +137,11 @@ export default function AddNutritionScreen() {
         onPress={handleSave}
         disabled={loading}
       >
-        <Text className="text-white font-bold text-lg">
-          {loading ? "Opslaan..." : "Opslaan"}
-        </Text>
+        {loading ? (
+           <ActivityIndicator color="white" />
+        ) : (
+           <Text className="text-white font-bold text-lg">Opslaan</Text>
+        )}
       </TouchableOpacity>
     </SafeAreaView>
   );
