@@ -9,7 +9,7 @@ export default function TabLayout() {
         headerShown: false, // we verwijderen de header voor een schonere look
         tabBarStyle: {
           backgroundColor: '#0F0F0F', // donkere achtergrond
-          borderTopColor: '#1E1E1E',  // een subtiele border
+          borderTopColor: '#1E1E1E',  // meer subtiele border
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
