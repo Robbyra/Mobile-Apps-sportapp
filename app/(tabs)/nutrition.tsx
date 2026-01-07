@@ -1,4 +1,4 @@
-import NutritionCard, { NutritionItem } from '@/components/NutriotionCard';
+import NutritionCard from '@/components/NutriotionCard';
 import PostToSocialModal from '@/components/PostToSocialModal';
 import { db } from '@/firebaseConfig';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { NutritionItem } from '../meal/[id]';
 
 export default function DashboardScreen() {
   const router = useRouter();
