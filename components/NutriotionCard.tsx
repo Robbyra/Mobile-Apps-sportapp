@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { NutritionItem } from '@/app/meal/[id]';
+import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { NutritionItem } from "@/app/meal/[id]";
 
 type Props = {
   item: NutritionItem;
@@ -15,7 +15,7 @@ export default function NutritionCard({ item }: Props) {
       className="bg-surface p-4 rounded-xl mb-3 border border-gray-800 flex-row justify-between items-center"
       onPress={() =>
         router.push({
-          pathname: '/meal/[id]',
+          pathname: "/meal/[id]",
           params: { id: item.id },
         })
       }
@@ -41,7 +41,9 @@ export default function NutritionCard({ item }: Props) {
 
       {/* RIGHT: Date + Chevron */}
       <View className="items-end">
-        {item.date && <Text className="text-gray-500 text-xs mb-1">{item.date}</Text>}
+        {item.date && (
+          <Text className="text-gray-500 text-xs mb-1">{item.date}</Text>
+        )}
         <Ionicons name="chevron-forward" size={20} color="#666" />
       </View>
     </TouchableOpacity>

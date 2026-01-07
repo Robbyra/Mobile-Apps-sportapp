@@ -1,4 +1,4 @@
-import { Modal, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, FlatList, Text, TouchableOpacity, View } from "react-native";
 
 export type WorkoutItem = {
   id: string;
@@ -33,17 +33,17 @@ export default function SelectWorkoutModal({
           data={workouts}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            
             <TouchableOpacity
               className="bg-surface p-4 rounded-xl mb-3 border border-gray-800"
               onPress={() => onSelect(item)}
             >
               {/* Naam van de workout */}
               <Text className="text-white font-semibold">{item.title}</Text>
-              
+
               {/* Sets, reps, gewicht */}
               <Text className="text-gray-400 text-xs">
-                Sets: {item.sets} | Reps: {item.reps} | Gewicht: {item.weight} kg
+                Sets: {item.sets} | Reps: {item.reps} | Gewicht: {item.weight}{" "}
+                kg
               </Text>
             </TouchableOpacity>
           )}

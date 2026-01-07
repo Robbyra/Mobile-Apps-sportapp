@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // <--- Belangrijk voor navigatie
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router"; // <--- Belangrijk voor navigatie
 
 // Define what a workout looks like
 export type WorkoutItem = {
@@ -21,12 +21,11 @@ const WorkoutCard = ({ item }: Props) => {
   const router = useRouter(); // <--- De navigator
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       className="bg-surface p-4 rounded-xl mb-3 border border-gray-800 flex-row justify-between items-center"
       // HERE IS THE LINK: We navigate to the file app/workout/[id].tsx
-      onPress={() => router.push(`/workout/${item.id}`)} 
+      onPress={() => router.push(`/workout/${item.id}`)}
     >
-      
       {/* Left side: Text info */}
       <View>
         <Text className="text-white font-bold text-lg">{item.title}</Text>
@@ -40,7 +39,6 @@ const WorkoutCard = ({ item }: Props) => {
         <Text className="text-gray-500 text-xs mb-1">{item.date}</Text>
         <Ionicons name="chevron-forward" size={20} color="#666" />
       </View>
-
     </TouchableOpacity>
   );
 };

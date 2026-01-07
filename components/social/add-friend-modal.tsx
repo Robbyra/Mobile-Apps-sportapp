@@ -1,8 +1,24 @@
-import { db } from '@/firebaseConfig';
-import { Ionicons } from '@expo/vector-icons';
-import { arrayUnion, collection, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { db } from "@/firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  arrayUnion,
+  collection,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface Friend {
   id: string;
@@ -23,22 +39,22 @@ export default function AddFriendModal({
   onAddFriend,
   existingFriends,
 }: AddFriendModalProps) {
-  const currentUserId = 'user-123';
-  const [searchQuery, setSearchQuery] = useState('');
+  const currentUserId = "user-123";
+  const [searchQuery, setSearchQuery] = useState("");
   const [allUsers, setAllUsers] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!visible) return;
 
-    const q = query(collection(db, 'users'), orderBy('name', 'asc'));
+    const q = query(collection(db, "users"), orderBy("name", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const users: Friend[] = [];
       snapshot.forEach((doc) => {
         users.push({
           id: doc.id,
           name: doc.data().name,
-          image: doc.data().image
+          image: doc.data().image,
         });
       });
       setAllUsers(users);
@@ -52,22 +68,23 @@ export default function AddFriendModal({
     user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const isFriend = (userId: string) => existingFriends.some((f) => f.id === userId);
+  const isFriend = (userId: string) =>
+    existingFriends.some((f) => f.id === userId);
 
   const handleAddFriend = async (user: Friend) => {
     try {
-      await updateDoc(doc(db, 'users', currentUserId), {
-        friends: arrayUnion(user.id)
+      await updateDoc(doc(db, "users", currentUserId), {
+        friends: arrayUnion(user.id),
       });
-      
-      await updateDoc(doc(db, 'users', user.id), {
-        friends: arrayUnion(currentUserId)
+
+      await updateDoc(doc(db, "users", user.id), {
+        friends: arrayUnion(currentUserId),
       });
 
       onAddFriend(user);
-      setSearchQuery('');
+      setSearchQuery("");
     } catch (error) {
-      console.error('Fout bij toevoegen vriend:', error);
+      console.error("Fout bij toevoegen vriend:", error);
     }
   };
 
@@ -85,17 +102,17 @@ export default function AddFriendModal({
       <TouchableOpacity
         className={`px-4 py-2 rounded-lg border ${
           isFriend(item.id)
-            ? 'bg-primary border-primary'
-            : 'bg-background border-gray-700'
+            ? "bg-primary border-primary"
+            : "bg-background border-gray-700"
         }`}
         onPress={() => handleAddFriend(item)}
       >
         <Text
           className={`font-semibold text-sm ${
-            isFriend(item.id) ? 'text-white' : 'text-primary'
+            isFriend(item.id) ? "text-white" : "text-primary"
           }`}
         >
-          {isFriend(item.id) ? '✓ Vrienden' : 'Toevoegen'}
+          {isFriend(item.id) ? "✓ Vrienden" : "Toevoegen"}
         </Text>
       </TouchableOpacity>
     </TouchableOpacity>
@@ -108,7 +125,9 @@ export default function AddFriendModal({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={24} color="#FF4D4D" />
           </TouchableOpacity>
-          <Text className="text-white text-xl font-bold">Vrienden toevoegen</Text>
+          <Text className="text-white text-xl font-bold">
+            Vrienden toevoegen
+          </Text>
           <View style={{ width: 24 }} />
         </View>
 

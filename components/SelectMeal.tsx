@@ -1,5 +1,5 @@
-import { NutritionItem } from '@/app/meal/[id]';
-import { Modal, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { NutritionItem } from "@/app/meal/[id]";
+import { FlatList, Modal, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   visible: boolean;

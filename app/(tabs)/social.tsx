@@ -1,17 +1,35 @@
-import CreatePostModal from '@/components/CreatePost';
-import AddFriendModal from '@/components/social/add-friend-modal';
-import PostCard from '@/components/social/post-card';
-import { db } from '@/firebaseConfig';
-import { Ionicons } from '@expo/vector-icons';
-import { arrayRemove, arrayUnion, collection, doc, limit, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import PostToSocialModal from '@/components/PostToSocialModal';
-import SelectMealModal from '@/components/SelectMeal';
-import SelectWorkoutModal from '@/components/SelectWorkout';
-import { WorkoutItem } from '@/components/WorkoutCard';
-import { NutritionItem } from '../meal/[id]';
+import CreatePostModal from "@/components/CreatePost";
+import PostToSocialModal from "@/components/PostToSocialModal";
+import SelectMealModal from "@/components/SelectMeal";
+import SelectWorkoutModal from "@/components/SelectWorkout";
+import AddFriendModal from "@/components/social/add-friend-modal";
+import PostCard from "@/components/social/post-card";
+import { WorkoutItem } from "@/components/WorkoutCard";
+import { db } from "@/firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  arrayRemove,
+  arrayUnion,
+  collection,
+  doc,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { NutritionItem } from "../meal/[id]";
 
 interface Friend {
   id: string;
@@ -24,7 +42,7 @@ interface Post {
   authorId: string;
   authorName: string;
   authorImage?: string;
-  type: 'workout' | 'meal';
+  type: "workout" | "meal";
   title: string;
   description: string;
   stats: string;
@@ -34,8 +52,8 @@ interface Post {
 }
 
 export default function SocialScreen() {
-  const currentUserId = 'user-123';
-  const [activeTab, setActiveTab] = useState<'feed' | 'friends'>('feed');
+  const currentUserId = "user-123";
+  const [activeTab, setActiveTab] = useState<"feed" | "friends">("feed");
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,21 +64,24 @@ export default function SocialScreen() {
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [meals, setMeals] = useState<NutritionItem[]>([]);
-const [selectedMeal, setSelectedMeal] = useState<NutritionItem | null>(null);
-const [showPostModal, setShowPostModal] = useState(false);
-type CreatePostType = 'meal' | 'workout' | null;
+  const [selectedMeal, setSelectedMeal] = useState<NutritionItem | null>(null);
+  const [showPostModal, setShowPostModal] = useState(false);
+  type CreatePostType = "meal" | "workout" | null;
 
-const [createType, setCreateType] = useState<CreatePostType>(null);
-const [showSelectMealModal, setShowSelectMealModal] = useState(false);
-const [showSelectWorkoutModal, setShowSelectWorkoutModal] = useState(false);
-const [workouts, setWorkouts] = useState<WorkoutItem[]>([]);
-const [selectedWorkout, setSelectedWorkout] = useState<WorkoutItem | null>(null);
-
-
-
+  const [createType, setCreateType] = useState<CreatePostType>(null);
+  const [showSelectMealModal, setShowSelectMealModal] = useState(false);
+  const [showSelectWorkoutModal, setShowSelectWorkoutModal] = useState(false);
+  const [workouts, setWorkouts] = useState<WorkoutItem[]>([]);
+  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutItem | null>(
+    null
+  );
 
   useEffect(() => {
-    const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'), limit(50));
+    const q = query(
+      collection(db, "posts"),
+      orderBy("timestamp", "desc"),
+      limit(50)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedPosts: Post[] = [];
       snapshot.forEach((doc) => {
@@ -73,14 +94,14 @@ const [selectedWorkout, setSelectedWorkout] = useState<WorkoutItem | null>(null)
   }, []);
 
   useEffect(() => {
-    const q = query(collection(db, 'users'), limit(20));
+    const q = query(collection(db, "users"), limit(20));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedFriends: Friend[] = [];
       snapshot.forEach((doc) => {
-        fetchedFriends.push({ 
-          id: doc.id, 
+        fetchedFriends.push({
+          id: doc.id,
           name: doc.data().name,
-          image: doc.data().image
+          image: doc.data().image,
         });
       });
       setFriends(fetchedFriends);
@@ -90,102 +111,103 @@ const [selectedWorkout, setSelectedWorkout] = useState<WorkoutItem | null>(null)
   }, []);
 
   useEffect(() => {
-  const unsubscribe = onSnapshot(collection(db, 'nutrition'), (snapshot) => {
-    const data = snapshot.docs.map((doc) => {
-      const d = doc.data();
-      return {
-        id: doc.id,
-        name: d.name || 'Unnamed meal',
-        calories: d.calories || 0,
-        protein: d.protein || 0,
-        carbs: d.carbs || 0,
-        fats: d.fats || 0,
-        date: d.date || '',
-      } as NutritionItem;
+    const unsubscribe = onSnapshot(collection(db, "nutrition"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          name: d.name || "Unnamed meal",
+          calories: d.calories || 0,
+          protein: d.protein || 0,
+          carbs: d.carbs || 0,
+          fats: d.fats || 0,
+          date: d.date || "",
+        } as NutritionItem;
+      });
+
+      setMeals(data);
     });
 
-    setMeals(data);
-  });
+    return unsubscribe;
+  }, []);
 
-  return unsubscribe;
-}, []);
-
-useEffect(() => {
-  const unsubscribe = onSnapshot(collection(db, 'workouts'), (snapshot) => {
-    const data = snapshot.docs.map((doc) => {
-      const d = doc.data();
-      return {
-        id: doc.id,
-        title: d.title || 'Unnamed workout',
-        sets: d.sets || 0,
-        reps: d.reps || 0,
-        weight: d.weight || 0,
-        date: d.date || '',
-      } as WorkoutItem;
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "workouts"), (snapshot) => {
+      const data = snapshot.docs.map((doc) => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          title: d.title || "Unnamed workout",
+          sets: d.sets || 0,
+          reps: d.reps || 0,
+          weight: d.weight || 0,
+          date: d.date || "",
+        } as WorkoutItem;
+      });
+      setWorkouts(data);
     });
-    setWorkouts(data);
-  });
 
-  return unsubscribe;
-}, []);
-
-
+    return unsubscribe;
+  }, []);
 
   const handleAddFriend = async (user: Friend) => {
     try {
-      await updateDoc(doc(db, 'users', currentUserId), {
-        friends: arrayUnion(user.id)
+      await updateDoc(doc(db, "users", currentUserId), {
+        friends: arrayUnion(user.id),
       });
-      
-      await updateDoc(doc(db, 'users', user.id), {
-        friends: arrayUnion(currentUserId)
+
+      await updateDoc(doc(db, "users", user.id), {
+        friends: arrayUnion(currentUserId),
       });
 
       if (!friends.some((f) => f.id === user.id)) {
         setFriends([...friends, user]);
       }
     } catch (error) {
-      console.error('Fout bij toevoegen vriend:', error);
+      console.error("Fout bij toevoegen vriend:", error);
     }
   };
 
   const handleLikePost = async (postId: string) => {
     try {
       const isLiked = likedPosts.includes(postId);
-      
+
       if (isLiked) {
-        await updateDoc(doc(db, 'posts', postId), {
-          likes: Math.max(0, (posts.find(p => p.id === postId)?.likes || 1) - 1)
+        await updateDoc(doc(db, "posts", postId), {
+          likes: Math.max(
+            0,
+            (posts.find((p) => p.id === postId)?.likes || 1) - 1
+          ),
         });
         setLikedPosts((prev) => prev.filter((id) => id !== postId));
       } else {
-        await updateDoc(doc(db, 'posts', postId), {
-          likes: (posts.find(p => p.id === postId)?.likes || 0) + 1
+        await updateDoc(doc(db, "posts", postId), {
+          likes: (posts.find((p) => p.id === postId)?.likes || 0) + 1,
         });
         setLikedPosts((prev) => [...prev, postId]);
       }
     } catch (error) {
-      console.error('Fout bij liken post:', error);
+      console.error("Fout bij liken post:", error);
     }
   };
 
   const handleSavePost = async (postId: string) => {
     try {
       const isSaved = savedPosts.includes(postId);
-      
+
       if (isSaved) {
-        await updateDoc(doc(db, 'users', currentUserId), {
-          savedPosts: arrayRemove(postId)
+        await updateDoc(doc(db, "users", currentUserId), {
+          savedPosts: arrayRemove(postId),
         });
         setSavedPosts((prev) => prev.filter((id) => id !== postId));
       } else {
-        await updateDoc(doc(db, 'users', currentUserId), {
-          savedPosts: arrayUnion(postId)
+        await updateDoc(doc(db, "users", currentUserId), {
+          savedPosts: arrayUnion(postId),
         });
         setSavedPosts((prev) => [...prev, postId]);
       }
     } catch (error) {
-      console.error('Fout bij opslaan post:', error);
+      console.error("Fout bij opslaan post:", error);
     }
   };
 
@@ -206,7 +228,6 @@ useEffect(() => {
     );
   }
 
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-800">
@@ -226,58 +247,59 @@ useEffect(() => {
       </View>
 
       <View className="flex-row items-center border-b border-gray-800">
-    {/* Voor jou */}
-    <TouchableOpacity
-        className={`flex-1 py-4 ${
-        activeTab === 'feed' ? 'border-b-2 border-primary' : ''
-        }`}
-        onPress={() => setActiveTab('feed')}
-    >
-        <Text
-        className={`text-center font-semibold ${
-            activeTab === 'feed' ? 'text-primary' : 'text-gray-400'
-        }`}
+        {/* Voor jou */}
+        <TouchableOpacity
+          className={`flex-1 py-4 ${
+            activeTab === "feed" ? "border-b-2 border-primary" : ""
+          }`}
+          onPress={() => setActiveTab("feed")}
         >
-        Voor jou
-        </Text>
-    </TouchableOpacity>
-    <View className="w-px h-6 bg-gray-700" />
+          <Text
+            className={`text-center font-semibold ${
+              activeTab === "feed" ? "text-primary" : "text-gray-400"
+            }`}
+          >
+            Voor jou
+          </Text>
+        </TouchableOpacity>
+        <View className="w-px h-6 bg-gray-700" />
 
-    {/* + knop */}
-    <TouchableOpacity
-  className="px-4 py-4"
-  onPress={() => setShowCreateModal(true)}
->
-  <Text className="text-primary text-xl font-bold">+</Text>
-</TouchableOpacity>
-
-    <View className="w-px h-6 bg-gray-700" />
-
-    {/* Vrienden */}
-    <TouchableOpacity
-        className={`flex-1 py-4 ${
-        activeTab === 'friends' ? 'border-b-2 border-primary' : ''
-        }`}
-        onPress={() => setActiveTab('friends')}
-    >
-        <Text
-        className={`text-center font-semibold ${
-            activeTab === 'friends' ? 'text-primary' : 'text-gray-400'
-        }`}
+        {/* + knop */}
+        <TouchableOpacity
+          className="px-4 py-4"
+          onPress={() => setShowCreateModal(true)}
         >
-        Vrienden ({friends.length})
-        </Text>
-    </TouchableOpacity>
-    </View>
+          <Text className="text-primary text-xl font-bold">+</Text>
+        </TouchableOpacity>
 
+        <View className="w-px h-6 bg-gray-700" />
 
-      {activeTab === 'feed' ? (
+        {/* Vrienden */}
+        <TouchableOpacity
+          className={`flex-1 py-4 ${
+            activeTab === "friends" ? "border-b-2 border-primary" : ""
+          }`}
+          onPress={() => setActiveTab("friends")}
+        >
+          <Text
+            className={`text-center font-semibold ${
+              activeTab === "friends" ? "text-primary" : "text-gray-400"
+            }`}
+          >
+            Vrienden ({friends.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === "feed" ? (
         <FlatList
           data={posts}
           renderItem={({ item }) => (
             <PostCard
               {...item}
-              onPress={() => handlePressFriend({ id: item.authorId, name: item.authorName })}
+              onPress={() =>
+                handlePressFriend({ id: item.authorId, name: item.authorName })
+              }
               onLike={() => handleLikePost(item.id)}
               onSave={() => handleSavePost(item.id)}
               isLiked={likedPosts.includes(item.id)}
@@ -307,7 +329,9 @@ useEffect(() => {
               </View>
             ) : (
               <View>
-                <Text className="text-white text-lg font-bold mb-4">Je vrienden</Text>
+                <Text className="text-white text-lg font-bold mb-4">
+                  Je vrienden
+                </Text>
                 {friends.map((friend) => (
                   <TouchableOpacity
                     key={friend.id}
@@ -316,14 +340,24 @@ useEffect(() => {
                   >
                     <View className="flex-row items-center flex-1">
                       <View className="w-12 h-12 bg-primary rounded-full justify-center items-center mr-3">
-                        <Text className="text-white font-bold">{friend.name.charAt(0)}</Text>
+                        <Text className="text-white font-bold">
+                          {friend.name.charAt(0)}
+                        </Text>
                       </View>
                       <View className="flex-1">
-                        <Text className="text-white font-semibold">{friend.name}</Text>
-                        <Text className="text-gray-400 text-xs">Vrienden sinds vandaag</Text>
+                        <Text className="text-white font-semibold">
+                          {friend.name}
+                        </Text>
+                        <Text className="text-gray-400 text-xs">
+                          Vrienden sinds vandaag
+                        </Text>
                       </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#A0A0A0" />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#A0A0A0"
+                    />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -340,21 +374,25 @@ useEffect(() => {
       />
 
       <CreatePostModal
-  visible={showCreateModal}
-  onClose={() => setShowCreateModal(false)}
-  onMealPress={() => {
-    setShowCreateModal(false);
-    setCreateType('meal');
-    setShowSelectMealModal(true);
-  }}
-  onWorkoutPress={() => {
-    setShowCreateModal(false);
-    setCreateType('workout');
-    setShowSelectWorkoutModal(true);
-  }}
-/>
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onMealPress={() => {
+          setShowCreateModal(false);
+          setCreateType("meal");
+          setShowSelectMealModal(true);
+        }}
+        onWorkoutPress={() => {
+          setShowCreateModal(false);
+          setCreateType("workout");
+          setShowSelectWorkoutModal(true);
+        }}
+      />
 
-      <Modal visible={selectedFriend !== null} animationType="slide" transparent={false}>
+      <Modal
+        visible={selectedFriend !== null}
+        animationType="slide"
+        transparent={false}
+      >
         {selectedFriend && (
           <SafeAreaView className="flex-1 bg-background">
             <View className="border-b border-gray-800">
@@ -372,7 +410,9 @@ useEffect(() => {
                     {selectedFriend.name.charAt(0)}
                   </Text>
                 </View>
-                <Text className="text-white text-2xl font-bold">{selectedFriend.name}</Text>
+                <Text className="text-white text-2xl font-bold">
+                  {selectedFriend.name}
+                </Text>
                 <Text className="text-gray-400 mt-2">Jouw vriend</Text>
 
                 <View className="flex-row gap-6 mt-6">
@@ -385,14 +425,14 @@ useEffect(() => {
                   <View className="w-px bg-gray-800" />
                   <View className="items-center">
                     <Text className="text-primary text-2xl font-bold">
-                      {friendPosts.filter((p) => p.type === 'workout').length}
+                      {friendPosts.filter((p) => p.type === "workout").length}
                     </Text>
                     <Text className="text-gray-400 text-xs mt-1">Workouts</Text>
                   </View>
                   <View className="w-px bg-gray-800" />
                   <View className="items-center">
                     <Text className="text-primary text-2xl font-bold">
-                      {friendPosts.filter((p) => p.type === 'meal').length}
+                      {friendPosts.filter((p) => p.type === "meal").length}
                     </Text>
                     <Text className="text-gray-400 text-xs mt-1">Meals</Text>
                   </View>
@@ -415,7 +455,9 @@ useEffect(() => {
               contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
               ListEmptyComponent={
                 <View className="items-center justify-center py-16">
-                  <Text className="text-gray-400">Geen posts van deze vriend</Text>
+                  <Text className="text-gray-400">
+                    Geen posts van deze vriend
+                  </Text>
                 </View>
               }
               scrollEnabled
@@ -426,52 +468,48 @@ useEffect(() => {
       </Modal>
 
       <SelectMealModal
-  visible={showSelectMealModal}
-  meals={meals}
-  onClose={() => setShowSelectMealModal(false)}
-  onSelect={(meal) => {
-    setShowSelectMealModal(false);
-    setSelectedMeal(meal);
-    setShowPostModal(true);
-  }}/>
+        visible={showSelectMealModal}
+        meals={meals}
+        onClose={() => setShowSelectMealModal(false)}
+        onSelect={(meal) => {
+          setShowSelectMealModal(false);
+          setSelectedMeal(meal);
+          setShowPostModal(true);
+        }}
+      />
 
-  <SelectWorkoutModal
-  visible={showSelectWorkoutModal}
-  workouts={workouts}
-  onClose={() => setShowSelectWorkoutModal(false)}
-  onSelect={(workout) => {
-    setShowSelectWorkoutModal(false);
-    setSelectedWorkout(workout);
-    setShowPostModal(true); 
-  }}
-/>
+      <SelectWorkoutModal
+        visible={showSelectWorkoutModal}
+        workouts={workouts}
+        onClose={() => setShowSelectWorkoutModal(false)}
+        onSelect={(workout) => {
+          setShowSelectWorkoutModal(false);
+          setSelectedWorkout(workout);
+          setShowPostModal(true);
+        }}
+      />
 
+      {selectedMeal && (
+        <PostToSocialModal
+          visible={showPostModal}
+          onClose={() => setShowPostModal(false)}
+          type="meal"
+          item={selectedMeal}
+          currentUserId={currentUserId}
+          currentUserName="Jouw Naam"
+        />
+      )}
 
-  
-
-  {selectedMeal && (
-  <PostToSocialModal
-    visible={showPostModal}
-    onClose={() => setShowPostModal(false)}
-    type="meal"
-    item={selectedMeal}
-    currentUserId={currentUserId}
-    currentUserName="Jouw Naam"
-  />
-)}
-
-{selectedWorkout && (
-  <PostToSocialModal
-    visible={showPostModal}
-    onClose={() => setShowPostModal(false)}
-    type="workout"
-    item={selectedWorkout}
-    currentUserId={currentUserId}
-    currentUserName="Jouw Naam"
-  />
-)}
-
-
+      {selectedWorkout && (
+        <PostToSocialModal
+          visible={showPostModal}
+          onClose={() => setShowPostModal(false)}
+          type="workout"
+          item={selectedWorkout}
+          currentUserId={currentUserId}
+          currentUserName="Jouw Naam"
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -1,7 +1,7 @@
-import { db } from '@/firebaseConfig';
-import { Ionicons } from '@expo/vector-icons';
-import { arrayUnion, doc, updateDoc } from 'firebase/firestore';
-import { FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
+import { db } from "@/firebaseConfig";
+import { Ionicons } from "@expo/vector-icons";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 
 interface Friend {
   id: string;
@@ -25,21 +25,21 @@ export default function FriendList({
   onAddFriend,
   horizontal = false,
   showAddButton = true,
-  currentUserId = 'user-123',
+  currentUserId = "user-123",
 }: FriendListProps) {
   const handleAddFriend = async (friend: Friend) => {
     try {
-      await updateDoc(doc(db, 'users', currentUserId), {
-        friends: arrayUnion(friend.id)
+      await updateDoc(doc(db, "users", currentUserId), {
+        friends: arrayUnion(friend.id),
       });
-      
-      await updateDoc(doc(db, 'users', friend.id), {
-        friends: arrayUnion(currentUserId)
+
+      await updateDoc(doc(db, "users", friend.id), {
+        friends: arrayUnion(currentUserId),
       });
 
       onAddFriend?.(friend);
     } catch (error) {
-      console.error('Fout bij toevoegen vriend:', error);
+      console.error("Fout bij toevoegen vriend:", error);
     }
   };
 
@@ -51,9 +51,14 @@ export default function FriendList({
       <View className="relative mb-2">
         <View className="w-16 h-16 bg-primary rounded-full justify-center items-center border-2 border-gray-700">
           {item.image ? (
-            <Image source={{ uri: item.image }} className="w-16 h-16 rounded-full" />
+            <Image
+              source={{ uri: item.image }}
+              className="w-16 h-16 rounded-full"
+            />
           ) : (
-            <Text className="text-white font-bold text-lg">{item.name.charAt(0)}</Text>
+            <Text className="text-white font-bold text-lg">
+              {item.name.charAt(0)}
+            </Text>
           )}
         </View>
         {item.isFriend && showAddButton && (
@@ -80,7 +85,9 @@ export default function FriendList({
         horizontal={horizontal}
         scrollEnabled={horizontal}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={!horizontal ? { flexDirection: 'column' } : undefined}
+        contentContainerStyle={
+          !horizontal ? { flexDirection: "column" } : undefined
+        }
       />
     </View>
   );

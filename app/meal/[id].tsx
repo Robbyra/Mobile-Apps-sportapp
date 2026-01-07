@@ -1,12 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Firebase imports
-import { deleteDoc, doc, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
+import { deleteDoc, doc, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
 
 export interface NutritionItem {
   id: string;
@@ -29,7 +36,7 @@ export default function MealDetailScreen() {
   useEffect(() => {
     if (!id) return;
 
-    const docRef = doc(db, 'nutrition', id as string);
+    const docRef = doc(db, "nutrition", id as string);
 
     // Listen to changes (real-time)
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
@@ -51,18 +58,18 @@ export default function MealDetailScreen() {
       "Weet je zeker dat je deze maaltijd wilt verwijderen?",
       [
         { text: "Annuleren", style: "cancel" },
-        { 
-          text: "Verwijder", 
+        {
+          text: "Verwijder",
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteDoc(doc(db, 'nutrition', id as string));
+              await deleteDoc(doc(db, "nutrition", id as string));
               router.back(); // Go back to the list
             } catch (error) {
               Alert.alert("Fout", "Kon niet verwijderen.");
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -78,9 +85,14 @@ export default function MealDetailScreen() {
   if (!meal) {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
-        <Text className="text-white">Maaltijd niet gevonden (of verwijderd).</Text>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4 bg-gray-800 p-3 rounded-lg">
-           <Text className="text-white">Ga terug</Text>
+        <Text className="text-white">
+          Maaltijd niet gevonden (of verwijderd).
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="mt-4 bg-gray-800 p-3 rounded-lg"
+        >
+          <Text className="text-white">Ga terug</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -99,7 +111,7 @@ export default function MealDetailScreen() {
 
         {/* Delete Icon */}
         <TouchableOpacity onPress={handleDelete}>
-           <Ionicons name="trash-outline" size={24} color="#FF4D4D" />
+          <Ionicons name="trash-outline" size={24} color="#FF4D4D" />
         </TouchableOpacity>
       </View>
 
@@ -109,24 +121,34 @@ export default function MealDetailScreen() {
           {meal.date && (
             <Text className="text-gray-400 text-sm mb-1">{meal.date}</Text>
           )}
-          <Text className="text-white text-3xl font-bold mb-4">{meal.name}</Text>
+          <Text className="text-white text-3xl font-bold mb-4">
+            {meal.name}
+          </Text>
 
           <View className="flex-row justify-between bg-background p-4 rounded-xl">
             <View className="items-center flex-1">
               <Text className="text-gray-400 text-xs">CALORIES</Text>
-              <Text className="text-primary text-xl font-bold">{meal.calories} kcal</Text>
+              <Text className="text-primary text-xl font-bold">
+                {meal.calories} kcal
+              </Text>
             </View>
             <View className="items-center flex-1 border-l border-gray-800">
               <Text className="text-gray-400 text-xs">PROTEIN</Text>
-              <Text className="text-primary text-xl font-bold">{meal.protein}g</Text>
+              <Text className="text-primary text-xl font-bold">
+                {meal.protein}g
+              </Text>
             </View>
             <View className="items-center flex-1 border-l border-gray-800">
               <Text className="text-gray-400 text-xs">CARBS</Text>
-              <Text className="text-primary text-xl font-bold">{meal.carbs}g</Text>
+              <Text className="text-primary text-xl font-bold">
+                {meal.carbs}g
+              </Text>
             </View>
             <View className="items-center flex-1 border-l border-gray-800">
               <Text className="text-gray-400 text-xs">FATS</Text>
-              <Text className="text-primary text-xl font-bold">{meal.fats}g</Text>
+              <Text className="text-primary text-xl font-bold">
+                {meal.fats}g
+              </Text>
             </View>
           </View>
         </View>
