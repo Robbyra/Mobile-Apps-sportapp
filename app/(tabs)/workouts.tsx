@@ -100,7 +100,7 @@ export default function WorkoutsScreen() {
           currentUserId={currentUserId}
           currentUserName={currentUserName}
         />
-      )}{" "}
+      )}
     </SafeAreaView>
   );
 }
