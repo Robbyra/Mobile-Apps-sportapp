@@ -1,75 +1,49 @@
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { NutritionItem } from '@/app/meal/[id]';
 
-export interface NutritionItem {
-  id: string;
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-  date?: string;
-}
+type Props = {
+  item: NutritionItem;
+};
 
-export default function NutritionCard({ item }: { item: NutritionItem }) {
+export default function NutritionCard({ item }: Props) {
   const router = useRouter();
 
-  const handleDelete = async () => {
-    Alert.alert(
-      'Verwijderen',
-      'Weet je zeker dat je deze maaltijd wilt verwijderen?',
-      [
-        { text: 'Annuleer', style: 'cancel' },
-        {
-          text: 'Verwijder',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteDoc(doc(db, 'nutrition', item.id));
-          },
-        },
-      ]
-    );
-  };
-
   return (
-    <View className="bg-surface p-4 rounded-xl mb-3 border border-gray-800">
-      
-      {/* HEADER */}
-      <View className="flex-row justify-between items-center mb-2">
-        <Text className="text-white text-lg font-bold">{item.name}</Text>
-        <Text className="text-gray-300 font-semibold">{item.calories} kcal</Text>
-      </View>
-
-      {/* MACROS */}
-      <View className="flex-row justify-between mb-3">
-        <Text className="text-gray-400">🥩 {item.protein}g</Text>
-        <Text className="text-gray-400">🍞 {item.carbs}g</Text>
-        <Text className="text-gray-400">🥑 {item.fats}g</Text>
-      </View>
-
-      {/* ACTIONS */}
-      <View className="flex-row justify-end gap-3">
-        <TouchableOpacity
-          className="px-4 py-2 rounded-lg border border-gray-700"
-          onPress={() =>
-            router.push({
-              pathname: '/edit-nutrition',
-              params: { id: item.id },
-            })
-          }
+    <TouchableOpacity
+      className="bg-surface p-4 rounded-xl mb-3 border border-gray-800 flex-row justify-between items-center"
+      onPress={() =>
+        router.push({
+          pathname: '/meal/[id]',
+          params: { id: item.id },
+        })
+      }
+    >
+      {/* LEFT: Meal info */}
+      <View className="flex-1 mr-2">
+        <Text
+          className="text-white text-lg font-bold mb-1"
+          numberOfLines={1}
+          ellipsizeMode="tail"
         >
-          <Text className="text-white">Edit</Text>
-        </TouchableOpacity>
+          {item.name}
+        </Text>
 
-        <TouchableOpacity
-          className="px-4 py-2 rounded-lg bg-red-600"
-          onPress={handleDelete}
-        >
-          <Text className="text-white font-semibold">Delete</Text>
-        </TouchableOpacity>
+        {/* Macros row */}
+        <View className="flex-row flex-wrap gap-3">
+          <Text className="text-gray-400">🔥 {item.calories} kcal</Text>
+          <Text className="text-gray-400">🥩 {item.protein}g</Text>
+          <Text className="text-gray-400">🍞 {item.carbs}g</Text>
+          <Text className="text-gray-400">🥑 {item.fats}g</Text>
+        </View>
       </View>
-    </View>
+
+      {/* RIGHT: Date + Chevron */}
+      <View className="items-end">
+        {item.date && <Text className="text-gray-500 text-xs mb-1">{item.date}</Text>}
+        <Ionicons name="chevron-forward" size={20} color="#666" />
+      </View>
+    </TouchableOpacity>
   );
 }

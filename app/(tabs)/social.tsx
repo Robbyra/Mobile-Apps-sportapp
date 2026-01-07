@@ -1,12 +1,17 @@
+import CreatePostModal from '@/components/CreatePost';
 import AddFriendModal from '@/components/social/add-friend-modal';
 import PostCard from '@/components/social/post-card';
 import { db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { arrayRemove, arrayUnion, collection, doc, limit, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PostToSocialModal from '@/components/PostToSocialModal';
+import SelectMealModal from '@/components/SelectMeal';
+import SelectWorkoutModal from '@/components/SelectWorkout';
+import { WorkoutItem } from '@/components/WorkoutCard';
+import { NutritionItem } from '../meal/[id]';
 
 interface Friend {
   id: string;
@@ -29,7 +34,6 @@ interface Post {
 }
 
 export default function SocialScreen() {
-  const router = useRouter();
   const currentUserId = 'user-123';
   const [activeTab, setActiveTab] = useState<'feed' | 'friends'>('feed');
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
@@ -40,6 +44,20 @@ export default function SocialScreen() {
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
   const [savedPosts, setSavedPosts] = useState<string[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [meals, setMeals] = useState<NutritionItem[]>([]);
+const [selectedMeal, setSelectedMeal] = useState<NutritionItem | null>(null);
+const [showPostModal, setShowPostModal] = useState(false);
+type CreatePostType = 'meal' | 'workout' | null;
+
+const [createType, setCreateType] = useState<CreatePostType>(null);
+const [showSelectMealModal, setShowSelectMealModal] = useState(false);
+const [showSelectWorkoutModal, setShowSelectWorkoutModal] = useState(false);
+const [workouts, setWorkouts] = useState<WorkoutItem[]>([]);
+const [selectedWorkout, setSelectedWorkout] = useState<WorkoutItem | null>(null);
+
+
+
 
   useEffect(() => {
     const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'), limit(50));
@@ -70,6 +88,48 @@ export default function SocialScreen() {
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+  const unsubscribe = onSnapshot(collection(db, 'nutrition'), (snapshot) => {
+    const data = snapshot.docs.map((doc) => {
+      const d = doc.data();
+      return {
+        id: doc.id,
+        name: d.name || 'Unnamed meal',
+        calories: d.calories || 0,
+        protein: d.protein || 0,
+        carbs: d.carbs || 0,
+        fats: d.fats || 0,
+        date: d.date || '',
+      } as NutritionItem;
+    });
+
+    setMeals(data);
+  });
+
+  return unsubscribe;
+}, []);
+
+useEffect(() => {
+  const unsubscribe = onSnapshot(collection(db, 'workouts'), (snapshot) => {
+    const data = snapshot.docs.map((doc) => {
+      const d = doc.data();
+      return {
+        id: doc.id,
+        title: d.title || 'Unnamed workout',
+        sets: d.sets || 0,
+        reps: d.reps || 0,
+        weight: d.weight || 0,
+        date: d.date || '',
+      } as WorkoutItem;
+    });
+    setWorkouts(data);
+  });
+
+  return unsubscribe;
+}, []);
+
+
 
   const handleAddFriend = async (user: Friend) => {
     try {
@@ -165,32 +225,51 @@ export default function SocialScreen() {
         </TouchableOpacity>
       </View>
 
-      <View className="flex-row border-b border-gray-800">
-        <TouchableOpacity
-          className={`flex-1 py-4 ${activeTab === 'feed' ? 'border-b-2 border-primary' : ''}`}
-          onPress={() => setActiveTab('feed')}
+      <View className="flex-row items-center border-b border-gray-800">
+    {/* Voor jou */}
+    <TouchableOpacity
+        className={`flex-1 py-4 ${
+        activeTab === 'feed' ? 'border-b-2 border-primary' : ''
+        }`}
+        onPress={() => setActiveTab('feed')}
+    >
+        <Text
+        className={`text-center font-semibold ${
+            activeTab === 'feed' ? 'text-primary' : 'text-gray-400'
+        }`}
         >
-          <Text
-            className={`text-center font-semibold ${
-              activeTab === 'feed' ? 'text-primary' : 'text-gray-400'
-            }`}
-          >
-            Voor jou
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className={`flex-1 py-4 ${activeTab === 'friends' ? 'border-b-2 border-primary' : ''}`}
-          onPress={() => setActiveTab('friends')}
+        Voor jou
+        </Text>
+    </TouchableOpacity>
+    <View className="w-px h-6 bg-gray-700" />
+
+    {/* + knop */}
+    <TouchableOpacity
+  className="px-4 py-4"
+  onPress={() => setShowCreateModal(true)}
+>
+  <Text className="text-primary text-xl font-bold">+</Text>
+</TouchableOpacity>
+
+    <View className="w-px h-6 bg-gray-700" />
+
+    {/* Vrienden */}
+    <TouchableOpacity
+        className={`flex-1 py-4 ${
+        activeTab === 'friends' ? 'border-b-2 border-primary' : ''
+        }`}
+        onPress={() => setActiveTab('friends')}
+    >
+        <Text
+        className={`text-center font-semibold ${
+            activeTab === 'friends' ? 'text-primary' : 'text-gray-400'
+        }`}
         >
-          <Text
-            className={`text-center font-semibold ${
-              activeTab === 'friends' ? 'text-primary' : 'text-gray-400'
-            }`}
-          >
-            Vrienden ({friends.length})
-          </Text>
-        </TouchableOpacity>
-      </View>
+        Vrienden ({friends.length})
+        </Text>
+    </TouchableOpacity>
+    </View>
+
 
       {activeTab === 'feed' ? (
         <FlatList
@@ -259,6 +338,21 @@ export default function SocialScreen() {
         onAddFriend={handleAddFriend}
         existingFriends={friends}
       />
+
+      <CreatePostModal
+  visible={showCreateModal}
+  onClose={() => setShowCreateModal(false)}
+  onMealPress={() => {
+    setShowCreateModal(false);
+    setCreateType('meal');
+    setShowSelectMealModal(true);
+  }}
+  onWorkoutPress={() => {
+    setShowCreateModal(false);
+    setCreateType('workout');
+    setShowSelectWorkoutModal(true);
+  }}
+/>
 
       <Modal visible={selectedFriend !== null} animationType="slide" transparent={false}>
         {selectedFriend && (
@@ -330,6 +424,54 @@ export default function SocialScreen() {
           </SafeAreaView>
         )}
       </Modal>
+
+      <SelectMealModal
+  visible={showSelectMealModal}
+  meals={meals}
+  onClose={() => setShowSelectMealModal(false)}
+  onSelect={(meal) => {
+    setShowSelectMealModal(false);
+    setSelectedMeal(meal);
+    setShowPostModal(true);
+  }}/>
+
+  <SelectWorkoutModal
+  visible={showSelectWorkoutModal}
+  workouts={workouts}
+  onClose={() => setShowSelectWorkoutModal(false)}
+  onSelect={(workout) => {
+    setShowSelectWorkoutModal(false);
+    setSelectedWorkout(workout);
+    setShowPostModal(true); 
+  }}
+/>
+
+
+  
+
+  {selectedMeal && (
+  <PostToSocialModal
+    visible={showPostModal}
+    onClose={() => setShowPostModal(false)}
+    type="meal"
+    item={selectedMeal}
+    currentUserId={currentUserId}
+    currentUserName="Jouw Naam"
+  />
+)}
+
+{selectedWorkout && (
+  <PostToSocialModal
+    visible={showPostModal}
+    onClose={() => setShowPostModal(false)}
+    type="workout"
+    item={selectedWorkout}
+    currentUserId={currentUserId}
+    currentUserName="Jouw Naam"
+  />
+)}
+
+
     </SafeAreaView>
   );
 }

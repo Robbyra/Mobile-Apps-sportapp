@@ -68,15 +68,6 @@ export default function DashboardScreen() {
             <View className="flex-1">
               <NutritionCard item={item} />
             </View>
-            <TouchableOpacity
-              className="bg-primary px-3 py-4 rounded-lg items-center justify-center"
-              onPress={() => {
-                setSelectedMeal(item);
-                setShowPostModal(true);
-              }}
-            >
-              <Text className="text-white font-bold text-xs">Post</Text>
-            </TouchableOpacity>
           </View>
         )}
         showsVerticalScrollIndicator={false}

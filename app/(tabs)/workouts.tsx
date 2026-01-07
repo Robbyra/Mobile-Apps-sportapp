@@ -69,15 +69,6 @@ export default function WorkoutsScreen() {
             <View className="flex-1">
               <WorkoutCard item={item} />
             </View>
-            <TouchableOpacity
-              className="bg-primary px-3 py-4 rounded-lg items-center justify-center"
-              onPress={() => {
-                setSelectedWorkout(item);
-                setShowPostModal(true);
-              }}
-            >
-              <Text className="text-white font-bold text-xs">Post</Text>
-            </TouchableOpacity>
           </View>
         )}
         showsVerticalScrollIndicator={false}

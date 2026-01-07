@@ -1,7 +1,7 @@
 import { db } from '@/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { addDoc, collection } from 'firebase/firestore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface PostToSocialModalProps {
@@ -10,8 +10,12 @@ interface PostToSocialModalProps {
   type: 'workout' | 'meal';
   item: {
     id: string;
-    title?: string;
-    name?: string;
+    title?: string;  // voor workout
+    name?: string;   // voor meal
+    sets?: number;
+    reps?: number;
+    weight?: number;
+    calories?: number;
     [key: string]: any;
   };
   currentUserId: string;
@@ -29,6 +33,11 @@ export default function PostToSocialModal({
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Reset description elke keer als modal opent
+  useEffect(() => {
+    if (visible) setDescription('');
+  }, [visible]);
+
   const handlePost = async () => {
     if (!description.trim()) {
       Alert.alert('Fout', 'Voeg een beschrijving toe');
@@ -37,25 +46,27 @@ export default function PostToSocialModal({
 
     setLoading(true);
     try {
+      const isWorkout = type === 'workout';
       const postData = {
         authorId: currentUserId,
         authorName: currentUserName,
         authorImage: '',
-        type: type === 'workout' ? 'workout' : 'meal',
-        title: type === 'workout' ? item.title : item.name,
-        description: description,
-        stats: type === 'workout' 
+        type,
+        title: isWorkout ? item.title : item.name,
+        description,
+        stats: isWorkout
           ? `${item.sets} sets × ${item.reps} reps — ${item.weight}kg`
           : `${item.calories} kcal`,
-        caloriesBurned: type === 'workout' ? Math.round((item.weight * item.reps * item.sets) * 0.5) : null,
+        caloriesBurned: isWorkout
+          ? Math.round((item.weight || 0) * (item.reps || 0) * (item.sets || 0) * 0.5)
+          : null,
         likes: 0,
         timestamp: new Date().toISOString(),
       };
 
       await addDoc(collection(db, 'posts'), postData);
-      
-      Alert.alert('Succes', `Je ${type === 'workout' ? 'workout' : 'maaltijd'} is gepost!`);
-      setDescription('');
+
+      Alert.alert('Succes', `Je ${isWorkout ? 'workout' : 'maaltijd'} is gepost!`);
       onClose();
     } catch (error) {
       console.error('Fout bij posten:', error);
@@ -108,9 +119,7 @@ export default function PostToSocialModal({
         </View>
 
         <TouchableOpacity
-          className={`p-4 rounded-xl items-center ${
-            loading ? 'bg-gray-600' : 'bg-primary'
-          }`}
+          className={`p-4 rounded-xl items-center ${loading ? 'bg-gray-600' : 'bg-primary'}`}
           onPress={handlePost}
           disabled={loading}
         >
