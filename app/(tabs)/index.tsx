@@ -99,6 +99,8 @@ export default function DashboardScreen() {
     );
   }
 
+  const goalReached = caloriesEaten >= CALORIE_GOAL;
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <StatusBar style="light" />
@@ -147,13 +149,28 @@ export default function DashboardScreen() {
               <View className="h-2 bg-gray-700 rounded-full w-full overflow-hidden">
                 <View
                   style={{ width: `${progress}%` }}
-                  className="h-full bg-primary rounded-full"
+                  className={`h-full rounded-full ${
+                    goalReached ? "bg-green-500" : "bg-primary"
+                  }`}
                 />
               </View>
             </View>
 
             <View className="items-end">
-              <Text className="text-gray-400 text-xs mb-1">Resterend</Text>
+              {goalReached ? (
+                <Text className="text-primary text-lg font-bold mt-2">
+                  🎉 Doel behaald!
+                </Text>
+              ) : (
+                <>
+                  <Text className="text-gray-400 text-xs mb-1">Resterend</Text>
+                  <Text className="text-white text-2xl font-bold">
+                    {caloriesLeft}
+                  </Text>
+                  <Text className="text-gray-400 text-xs">kcal</Text>
+                </>
+              )}
+
               <Text className="text-white text-2xl font-bold">
                 {caloriesLeft}
               </Text>
