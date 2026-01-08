@@ -15,8 +15,10 @@ interface PostCardProps {
   onPress?: () => void;
   onLike?: () => void;
   onSave?: () => void;
+  onComment?: () => void;
   isLiked?: boolean;
   isSaved?: boolean;
+  comments?: number;
 }
 
 export default function PostCard({
@@ -32,8 +34,10 @@ export default function PostCard({
   onPress,
   onLike,
   onSave,
+  onComment,
   isLiked = false,
   isSaved = false,
+  comments = 0,
 }: PostCardProps) {
   return (
     <TouchableOpacity
@@ -129,9 +133,14 @@ export default function PostCard({
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className="flex-row items-center flex-1 justify-center py-2">
+        <TouchableOpacity
+          className="flex-row items-center flex-1 justify-center py-2"
+          onPress={onComment}
+        >
           <Ionicons name="chatbubble-outline" size={18} color="#A0A0A0" />
-          <Text className="ml-2 font-semibold text-gray-400">Reageer</Text>
+          <Text className="ml-2 font-semibold text-gray-400">
+            {comments > 0 ? comments : "Reageer"}
+          </Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>

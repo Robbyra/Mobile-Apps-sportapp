@@ -3,19 +3,24 @@ import PostToSocialModal from "@/components/PostToSocialModal";
 import SelectMealModal from "@/components/SelectMeal";
 import SelectWorkoutModal from "@/components/SelectWorkout";
 import AddFriendModal from "@/components/social/add-friend-modal";
+import CommentModal from "@/components/social/comment-modal";
 import PostCard from "@/components/social/post-card";
 import { WorkoutItem } from "@/components/WorkoutCard";
 import { db } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
 import {
+  addDoc,
   arrayRemove,
   arrayUnion,
   collection,
+  deleteDoc,
   doc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -49,6 +54,7 @@ interface Post {
   caloriesBurned?: number;
   likes: number;
   timestamp: string;
+  comments?: number;
 }
 
 export default function SocialScreen() {
@@ -66,6 +72,9 @@ export default function SocialScreen() {
   const [meals, setMeals] = useState<NutritionItem[]>([]);
   const [selectedMeal, setSelectedMeal] = useState<NutritionItem | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedPostForComments, setSelectedPostForComments] = useState<Post | null>(null);
+  const [postComments, setPostComments] = useState<Map<string, any[]>>(new Map());
   type CreatePostType = "meal" | "workout" | null;
 
   const [createType, setCreateType] = useState<CreatePostType>(null);
@@ -82,30 +91,65 @@ export default function SocialScreen() {
       orderBy("timestamp", "desc"),
       limit(50)
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const fetchedPosts: Post[] = [];
       snapshot.forEach((doc) => {
         fetchedPosts.push({ id: doc.id, ...doc.data() } as Post);
       });
       setPosts(fetchedPosts);
+      
+      const likedPostIds: string[] = [];
+      for (const post of fetchedPosts) {
+        try {
+          const likesCollection = collection(db, "posts", post.id, "likes");
+          const likeDoc = await getDocs(query(likesCollection));
+          const userLiked = likeDoc.docs.some((doc) => doc.id === currentUserId);
+          if (userLiked) {
+            likedPostIds.push(post.id);
+          }
+        } catch (error) {
+          console.error("Error checking likes:", error);
+        }
+      }
+      setLikedPosts(likedPostIds);
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
   useEffect(() => {
-    const q = query(collection(db, "users"), limit(20));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedFriends: Friend[] = [];
-      snapshot.forEach((doc) => {
-        fetchedFriends.push({
-          id: doc.id,
-          name: doc.data().name,
-          image: doc.data().image,
-        });
-      });
-      setFriends(fetchedFriends);
-      setLoadingFriends(false);
+    const currentUserRef = doc(db, "users", currentUserId);
+    const unsubscribe = onSnapshot(currentUserRef, (snapshot) => {
+      const userData = snapshot.data();
+      const friendIds = userData?.friends || [];
+      
+      if (friendIds.length > 0) {
+        const fetchFriends = async () => {
+          const fetchedFriends: Friend[] = [];
+          for (const friendId of friendIds) {
+            try {
+              const friendDoc = await getDocs(query(collection(db, "users")));
+              const friend = friendDoc.docs.find((doc) => doc.id === friendId);
+              if (friend) {
+                fetchedFriends.push({
+                  id: friend.id,
+                  name: friend.data().name,
+                  image: friend.data().image,
+                });
+              }
+            } catch (error) {
+              console.error("Error fetching friend:", error);
+            }
+          }
+          setFriends(fetchedFriends);
+          setLoadingFriends(false);
+        };
+
+        fetchFriends();
+      } else {
+        setFriends([]);
+        setLoadingFriends(false);
+      }
     });
     return unsubscribe;
   }, []);
@@ -182,8 +226,11 @@ export default function SocialScreen() {
   const handleLikePost = async (postId: string) => {
     try {
       const isLiked = likedPosts.includes(postId);
+      const likesRef = collection(db, "posts", postId, "likes");
+      const userLikeRef = doc(likesRef, currentUserId);
 
       if (isLiked) {
+        await deleteDoc(userLikeRef);
         await updateDoc(doc(db, "posts", postId), {
           likes: Math.max(
             0,
@@ -192,6 +239,10 @@ export default function SocialScreen() {
         });
         setLikedPosts((prev) => prev.filter((id) => id !== postId));
       } else {
+        await setDoc(userLikeRef, {
+          userId: currentUserId,
+          timestamp: new Date(),
+        });
         await updateDoc(doc(db, "posts", postId), {
           likes: (posts.find((p) => p.id === postId)?.likes || 0) + 1,
         });
@@ -205,20 +256,103 @@ export default function SocialScreen() {
   const handleSavePost = async (postId: string) => {
     try {
       const isSaved = savedPosts.includes(postId);
+      const userRef = doc(db, "users", currentUserId);
 
       if (isSaved) {
-        await updateDoc(doc(db, "users", currentUserId), {
-          savedPosts: arrayRemove(postId),
-        });
+        await setDoc(
+          userRef,
+          {
+            savedPosts: arrayRemove(postId),
+          },
+          { merge: true }
+        );
         setSavedPosts((prev) => prev.filter((id) => id !== postId));
       } else {
-        await updateDoc(doc(db, "users", currentUserId), {
-          savedPosts: arrayUnion(postId),
-        });
+        await setDoc(
+          userRef,
+          {
+            savedPosts: arrayUnion(postId),
+          },
+          { merge: true }
+        );
         setSavedPosts((prev) => [...prev, postId]);
       }
     } catch (error) {
       console.error("Fout bij opslaan post:", error);
+    }
+  };
+
+  const handleCommentPress = async (post: Post) => {
+    setSelectedPostForComments(post);
+    try {
+      const commentsCollection = collection(db, "posts", post.id, "comments");
+      const commentsQuery = query(commentsCollection, orderBy("timestamp", "asc"));
+      const snapshot = await getDocs(commentsQuery);
+      
+      const comments = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      setPostComments(new Map(postComments.set(post.id, comments)));
+    } catch (error) {
+      console.error("Fout bij laden reacties:", error);
+    }
+    
+    setShowCommentModal(true);
+  };
+
+  const handleSubmitComment = async (text: string) => {
+    if (!selectedPostForComments) return;
+
+    try {
+      const newComment = {
+        authorName: "Jouw Naam",
+        text: text,
+        timestamp: new Date(),
+        authorId: currentUserId,
+      };
+
+      const commentsCollection = collection(
+        db,
+        "posts",
+        selectedPostForComments.id,
+        "comments"
+      );
+      await addDoc(commentsCollection, newComment);
+
+      const postId = selectedPostForComments.id;
+      const currentComments = postComments.get(postId) || [];
+      const updatedComments = [
+        ...currentComments,
+        {
+          id: `comment-${Date.now()}`,
+          ...newComment,
+        },
+      ];
+
+      setPostComments(new Map(postComments.set(postId, updatedComments)));
+
+      if (selectedPostForComments) {
+        setSelectedPostForComments({
+          ...selectedPostForComments,
+          comments: (selectedPostForComments.comments || 0) + 1,
+        });
+      }
+
+      setPosts((prevPosts) =>
+        prevPosts.map((p) =>
+          p.id === postId
+            ? { ...p, comments: (p.comments || 0) + 1 }
+            : p
+        )
+      );
+
+      await updateDoc(doc(db, "posts", postId), {
+        comments: (selectedPostForComments.comments || 0) + 1,
+      });
+    } catch (error) {
+      console.error("Fout bij toevoegen reactie:", error);
     }
   };
 
@@ -258,7 +392,6 @@ export default function SocialScreen() {
       </View>
 
       <View className="flex-row items-center border-b border-gray-800">
-        {/* Voor jou */}
         <TouchableOpacity
           className={`flex-1 py-4 ${
             activeTab === "feed" ? "border-b-2 border-primary" : ""
@@ -275,7 +408,6 @@ export default function SocialScreen() {
         </TouchableOpacity>
         <View className="w-px h-6 bg-gray-700" />
 
-        {/* + knop */}
         <TouchableOpacity
           className="px-4 py-4"
           onPress={() => setShowCreateModal(true)}
@@ -285,7 +417,6 @@ export default function SocialScreen() {
 
         <View className="w-px h-6 bg-gray-700" />
 
-        {/* Vrienden */}
         <TouchableOpacity
           className={`flex-1 py-4 ${
             activeTab === "friends" ? "border-b-2 border-primary" : ""
@@ -313,8 +444,10 @@ export default function SocialScreen() {
               }
               onLike={() => handleLikePost(item.id)}
               onSave={() => handleSavePost(item.id)}
+              onComment={() => handleCommentPress(item)}
               isLiked={likedPosts.includes(item.id)}
               isSaved={savedPosts.includes(item.id)}
+              comments={item.comments || 0}
             />
           )}
           keyExtractor={(item) => item.id}
@@ -343,34 +476,36 @@ export default function SocialScreen() {
                 <Text className="text-white text-lg font-bold mb-4">
                   Je vrienden
                 </Text>
-                {friends.map((friend) => (
-                  <TouchableOpacity
-                    key={friend.id}
-                    className="flex-row items-center justify-between bg-surface p-4 rounded-xl mb-3 border border-gray-800"
-                    onPress={() => handlePressFriend(friend)}
-                  >
-                    <View className="flex-row items-center flex-1">
-                      <View className="w-12 h-12 bg-primary rounded-full justify-center items-center mr-3">
-                        <Text className="text-white font-bold">
-                          {friend.name.charAt(0)}
-                        </Text>
+                {friends
+                  .filter((friend) => friend && friend.name)
+                  .map((friend) => (
+                    <TouchableOpacity
+                      key={friend.id}
+                      className="flex-row items-center justify-between bg-surface p-4 rounded-xl mb-3 border border-gray-800"
+                      onPress={() => handlePressFriend(friend)}
+                    >
+                      <View className="flex-row items-center flex-1">
+                        <View className="w-12 h-12 bg-primary rounded-full justify-center items-center mr-3">
+                          <Text className="text-white font-bold">
+                            {friend.name?.charAt(0) || "?"}
+                          </Text>
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-white font-semibold">
+                            {friend.name || "Onbekend"}
+                          </Text>
+                          <Text className="text-gray-400 text-xs">
+                            Vrienden sinds vandaag
+                          </Text>
+                        </View>
                       </View>
-                      <View className="flex-1">
-                        <Text className="text-white font-semibold">
-                          {friend.name}
-                        </Text>
-                        <Text className="text-gray-400 text-xs">
-                          Vrienden sinds vandaag
-                        </Text>
-                      </View>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color="#A0A0A0"
-                    />
-                  </TouchableOpacity>
-                ))}
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color="#A0A0A0"
+                      />
+                    </TouchableOpacity>
+                  ))}
               </View>
             )}
           </View>
@@ -418,11 +553,11 @@ export default function SocialScreen() {
               <View className="items-center py-6 px-4">
                 <View className="w-20 h-20 bg-primary rounded-full justify-center items-center mb-4">
                   <Text className="text-white font-bold text-3xl">
-                    {selectedFriend.name.charAt(0)}
+                    {selectedFriend?.name?.charAt(0) || "?"}
                   </Text>
                 </View>
                 <Text className="text-white text-2xl font-bold">
-                  {selectedFriend.name}
+                  {selectedFriend?.name || "Onbekend"}
                 </Text>
                 <Text className="text-gray-400 mt-2">Jouw vriend</Text>
 
@@ -458,8 +593,10 @@ export default function SocialScreen() {
                   {...item}
                   onLike={() => handleLikePost(item.id)}
                   onSave={() => handleSavePost(item.id)}
+                  onComment={() => handleCommentPress(item)}
                   isLiked={likedPosts.includes(item.id)}
                   isSaved={savedPosts.includes(item.id)}
+                  comments={item.comments || 0}
                 />
               )}
               keyExtractor={(item) => item.id}
@@ -519,6 +656,19 @@ export default function SocialScreen() {
           item={selectedWorkout}
           currentUserId={currentUserId}
           currentUserName="Jouw Naam"
+        />
+      )}
+
+      {selectedPostForComments && (
+        <CommentModal
+          visible={showCommentModal}
+          postTitle={selectedPostForComments.title}
+          comments={postComments.get(selectedPostForComments.id) || []}
+          onClose={() => {
+            setShowCommentModal(false);
+            setSelectedPostForComments(null);
+          }}
+          onSubmitComment={handleSubmitComment}
         />
       )}
     </SafeAreaView>
