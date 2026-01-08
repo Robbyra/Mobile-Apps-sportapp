@@ -13,13 +13,11 @@ export default function WorkoutDetailScreen() {
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch real data from Firebase
   useEffect(() => {
     if (!id) return;
 
     const docRef = doc(db, 'workouts', id as string);
 
-    // Listen to changes
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         setWorkout({ id: docSnap.id, ...docSnap.data() });
@@ -32,7 +30,7 @@ export default function WorkoutDetailScreen() {
     return () => unsubscribe();
   }, [id]);
 
-  // 2. Function to delete
+  // functie om workout te verwijderen
   const handleDelete = async () => {
     Alert.alert(
       "Verwijderen",
@@ -74,7 +72,7 @@ export default function WorkoutDetailScreen() {
     );
   }
 
-  // Check of het cardio is
+  // checked of het een cardio workout is
   const isCardio = workout.type === 'cardio';
 
   return (
@@ -100,11 +98,11 @@ export default function WorkoutDetailScreen() {
           <Text className="text-gray-400 text-sm mb-1">{workout.date}</Text>
           <Text className="text-white text-3xl font-bold mb-4">{workout.title}</Text>
           
-          {/* --- HIER CHECKEN WE HET TYPE --- */}
+          {/* --- Type Checken --- */}
           <View className="flex-row justify-between bg-background p-4 rounded-xl">
              
              {isCardio ? (
-               // CARDIO WEERGAVE
+               // cardio weergave
                <>
                  <View className="items-center flex-1">
                     <Text className="text-gray-400 text-xs uppercase">Afstand</Text>
@@ -123,7 +121,7 @@ export default function WorkoutDetailScreen() {
                  </View>
                </>
              ) : (
-               // KRACHT WEERGAVE (DEFAULT)
+               // Kracht weergave
                <>
                  <View className="items-center flex-1">
                     <Text className="text-gray-400 text-xs uppercase">Sets</Text>
@@ -144,7 +142,7 @@ export default function WorkoutDetailScreen() {
           </View>
         </View>
 
-        {/* Extra info (optioneel) */}
+        {/* Extra info*/}
         {isCardio && (
              <View className="bg-surface p-4 rounded-xl border border-gray-800 flex-row items-center justify-center">
                  <Ionicons name="flame" size={24} color="#FF4D4D" style={{marginRight: 10}} />

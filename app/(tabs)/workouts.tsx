@@ -2,12 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-
-// Firebase imports
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
-
-// Importeer je custom kaartje
 import WorkoutCard, { WorkoutItem } from '@/components/WorkoutCard';
 
 export default function WorkoutsScreen() {
@@ -18,7 +14,6 @@ export default function WorkoutsScreen() {
 
   useEffect(() => {
     // Haal workouts op, gesorteerd op datum (nieuwste eerst)
-    // Als je oude workouts geen 'timestamp' hebben, gebruik dan: query(collection(db, 'workouts'))
     const q = query(collection(db, 'workouts'), orderBy('timestamp', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -29,7 +24,6 @@ export default function WorkoutsScreen() {
           title: data.title || 'Naamloos',
           date: data.date || 'Geen datum',
           
-          // BELANGRIJK: Haal het type op! (default naar 'strength' als het mist)
           type: data.type || 'strength', 
           
           // Kracht data ophalen

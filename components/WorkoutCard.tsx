@@ -1,5 +1,5 @@
-import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Text, View } from 'react-native';
 
 export interface WorkoutItem {
   id: string;
@@ -18,7 +18,6 @@ export default function WorkoutCard({ item }: { item: WorkoutItem }) {
   const isCardio = item.type === 'cardio';
 
   return (
-    // VERWIJDERD: 'h-full' uit de className hieronder
     <View className="bg-surface p-4 rounded-xl border border-gray-800 flex-row justify-between items-center">
       <View>
         <Text className="text-white font-bold text-lg">{item.title}</Text>

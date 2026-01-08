@@ -10,8 +10,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState, useEffect } from "react";
-
-// Firebase Imports
 import {
   collection,
   onSnapshot,
@@ -34,7 +32,6 @@ export default function DashboardScreen() {
   const CALORIE_GOAL = 2500;
 
   useEffect(() => {
-    // 1. Luister naar WORKOUTS (Jouw deel)
     const qWorkouts = query(
       collection(db, "workouts"),
       orderBy("timestamp", "desc"),
@@ -48,10 +45,10 @@ export default function DashboardScreen() {
       const workouts = snapshot.docs.map((doc) => {
         const data = doc.data();
 
-        // Simpele check: Is de workout van vandaag?
+        // Kleine check
         if (data.date === new Date().toLocaleDateString("nl-NL")) {
           count++;
-          // Als het Cardio is, tellen we de verbrande calorieën op
+          // telt verbrandde calorieën alleen voor cardio workouts
           if (data.type === "cardio" && data.calories) {
             burned += Number(data.calories);
           }
@@ -64,14 +61,12 @@ export default function DashboardScreen() {
       setWorkoutCount(count);
     });
 
-    // 2. Luister naar NUTRITION (Teamgenoot deel)
-    // We pakken de 'nutrition' collectie die je teamgenoot gebruikt
+    // nutrition collection voor calorieën
     const qNutrition = query(collection(db, "nutrition"));
     const unsubNutrition = onSnapshot(qNutrition, (snapshot) => {
       let eaten = 0;
       snapshot.docs.forEach((doc) => {
         const data = doc.data();
-        // Tel alle calorieën op van de maaltijden
         eaten += Number(data.calories || 0);
       });
       setCaloriesEaten(eaten);
@@ -84,11 +79,8 @@ export default function DashboardScreen() {
     };
   }, []);
 
-  // De berekening: Je start met 2500. Je eet (min). Je sport (plus).
   const caloriesLeft = CALORIE_GOAL - caloriesEaten + caloriesBurned;
 
-  // Progress bar logica (Hoeveel van je "budget" is op?)
-  // We klemmen hem op max 100% zodat de balk niet uit het scherm loopt
   const progress = Math.min((caloriesEaten / CALORIE_GOAL) * 100, 100);
 
   if (loading) {
@@ -120,7 +112,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* --- VANDAAG KAART (LIVE DATA) --- */}
+        {/* --- VANDAAG KAART --- */}
         <View className="bg-surface p-5 rounded-2xl mb-4 border border-gray-800">
           <View className="flex-row justify-between items-start mb-2">
             <View>
@@ -182,7 +174,7 @@ export default function DashboardScreen() {
         {/* --- SNELLE ACTIES --- */}
         <Text className="text-white text-lg font-bold mb-4">Snelle acties</Text>
         <View className="flex-row gap-3 mb-8">
-          {/* Knop 1: Workout toevoegen */}
+          {/* Workout toevoegen */}
           <TouchableOpacity
             className="flex-1 bg-primary p-4 rounded-xl items-center"
             onPress={() => router.push("/add-workout")}
@@ -196,10 +188,9 @@ export default function DashboardScreen() {
             <Text className="text-white font-bold">Activiteit</Text>
           </TouchableOpacity>
 
-          {/* Knop 2: Voeding toevoegen (Teamgenoot pagina) */}
+          {/*Voeding toevoegen*/}
           <TouchableOpacity
             className="flex-1 bg-surface border border-gray-800 p-4 rounded-xl items-center"
-            // LET OP: Ik gebruik hier jouw bestandsnaam 'add-nutriotion' (met typo zoals in je upload)
             onPress={() => router.push("/add-nutriotion")}
           >
             <Ionicons
@@ -212,7 +203,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* --- RECENTE ACTIVITEITEN (LIVE LIJST) --- */}
+        {/* --- RECENTE ACTIVITEITEN --- */}
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-white text-lg font-bold">
             Recente activiteiten
