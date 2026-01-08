@@ -1,19 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-// Firebase imports
-import { deleteDoc, doc, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../../firebaseConfig';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -22,18 +13,17 @@ export default function WorkoutDetailScreen() {
   const [workout, setWorkout] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch real data from Firebase based on ID
+  // 1. Fetch real data from Firebase
   useEffect(() => {
     if (!id) return;
 
-    const docRef = doc(db, "workouts", id as string);
+    const docRef = doc(db, 'workouts', id as string);
 
-    // Listen to changes (real-time)
+    // Listen to changes
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         setWorkout({ id: docSnap.id, ...docSnap.data() });
       } else {
-        // Document deleted or doesn't exist
         setWorkout(null);
       }
       setLoading(false);
@@ -42,25 +32,25 @@ export default function WorkoutDetailScreen() {
     return () => unsubscribe();
   }, [id]);
 
-  // 2. Function to delete the workout
+  // 2. Function to delete
   const handleDelete = async () => {
     Alert.alert(
       "Verwijderen",
-      "Weet je zeker dat je deze workout wilt verwijderen?",
+      "Weet je zeker dat je deze activiteit wilt verwijderen?",
       [
         { text: "Annuleren", style: "cancel" },
-        {
-          text: "Verwijder",
+        { 
+          text: "Verwijder", 
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteDoc(doc(db, "workouts", id as string));
-              router.back(); // Go back to the list
+              await deleteDoc(doc(db, 'workouts', id as string));
+              router.back(); 
             } catch (error) {
               Alert.alert("Fout", "Kon niet verwijderen.");
             }
-          },
-        },
+          }
+        }
       ]
     );
   };
@@ -76,22 +66,20 @@ export default function WorkoutDetailScreen() {
   if (!workout) {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
-        <Text className="text-white">
-          Workout niet gevonden (of verwijderd).
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mt-4 bg-gray-800 p-3 rounded-lg"
-        >
-          <Text className="text-white">Ga terug</Text>
+        <Text className="text-white">Activiteit niet gevonden.</Text>
+        <TouchableOpacity onPress={() => router.back()} className="mt-4 bg-gray-800 p-3 rounded-lg">
+           <Text className="text-white">Ga terug</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
+  // Check of het cardio is
+  const isCardio = workout.type === 'cardio';
+
   return (
     <SafeAreaView className="flex-1 bg-background">
-      {/* Custom Header */}
+      {/* Header */}
       <View className="px-4 py-2 flex-row items-center justify-between border-b border-gray-800 pb-4">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} className="mr-4">
@@ -100,41 +88,72 @@ export default function WorkoutDetailScreen() {
           <Text className="text-white text-xl font-bold">Details</Text>
         </View>
 
-        {/* Delete Icon */}
         <TouchableOpacity onPress={handleDelete}>
-          <Ionicons name="trash-outline" size={24} color="#FF4D4D" />
+           <Ionicons name="trash-outline" size={24} color="#FF4D4D" />
         </TouchableOpacity>
       </View>
 
       <ScrollView className="p-5">
+        
         {/* Title Card */}
         <View className="bg-surface p-6 rounded-2xl border border-gray-800 mb-6">
           <Text className="text-gray-400 text-sm mb-1">{workout.date}</Text>
-          <Text className="text-white text-3xl font-bold mb-4">
-            {workout.title}
-          </Text>
-
+          <Text className="text-white text-3xl font-bold mb-4">{workout.title}</Text>
+          
+          {/* --- HIER CHECKEN WE HET TYPE --- */}
           <View className="flex-row justify-between bg-background p-4 rounded-xl">
-            <View className="items-center flex-1">
-              <Text className="text-gray-400 text-xs">SETS</Text>
-              <Text className="text-primary text-xl font-bold">
-                {workout.sets}
-              </Text>
-            </View>
-            <View className="items-center flex-1 border-l border-gray-800">
-              <Text className="text-gray-400 text-xs">REPS</Text>
-              <Text className="text-primary text-xl font-bold">
-                {workout.reps}
-              </Text>
-            </View>
-            <View className="items-center flex-1 border-l border-gray-800">
-              <Text className="text-gray-400 text-xs">KG</Text>
-              <Text className="text-primary text-xl font-bold">
-                {workout.weight}
-              </Text>
-            </View>
+             
+             {isCardio ? (
+               // CARDIO WEERGAVE
+               <>
+                 <View className="items-center flex-1">
+                    <Text className="text-gray-400 text-xs uppercase">Afstand</Text>
+                    <Text className="text-primary text-xl font-bold">{workout.distance || 0}</Text>
+                    <Text className="text-gray-500 text-xs">km</Text>
+                 </View>
+                 <View className="items-center flex-1 border-l border-gray-800">
+                    <Text className="text-gray-400 text-xs uppercase">Tijd</Text>
+                    <Text className="text-primary text-xl font-bold">{workout.duration || 0}</Text>
+                    <Text className="text-gray-500 text-xs">min</Text>
+                 </View>
+                 <View className="items-center flex-1 border-l border-gray-800">
+                    <Text className="text-gray-400 text-xs uppercase">Verbrand</Text>
+                    <Text className="text-primary text-xl font-bold">{workout.calories || 0}</Text>
+                    <Text className="text-gray-500 text-xs">kcal</Text>
+                 </View>
+               </>
+             ) : (
+               // KRACHT WEERGAVE (DEFAULT)
+               <>
+                 <View className="items-center flex-1">
+                    <Text className="text-gray-400 text-xs uppercase">Sets</Text>
+                    <Text className="text-primary text-xl font-bold">{workout.sets || 0}</Text>
+                 </View>
+                 <View className="items-center flex-1 border-l border-gray-800">
+                    <Text className="text-gray-400 text-xs uppercase">Reps</Text>
+                    <Text className="text-primary text-xl font-bold">{workout.reps || 0}</Text>
+                 </View>
+                 <View className="items-center flex-1 border-l border-gray-800">
+                    <Text className="text-gray-400 text-xs uppercase">Gewicht</Text>
+                    <Text className="text-primary text-xl font-bold">{workout.weight || 0}</Text>
+                    <Text className="text-gray-500 text-xs">kg</Text>
+                 </View>
+               </>
+             )}
+
           </View>
         </View>
+
+        {/* Extra info (optioneel) */}
+        {isCardio && (
+             <View className="bg-surface p-4 rounded-xl border border-gray-800 flex-row items-center justify-center">
+                 <Ionicons name="flame" size={24} color="#FF4D4D" style={{marginRight: 10}} />
+                 <Text className="text-white font-semibold">
+                    Goed bezig! Je hebt {workout.calories} kcal verbrand.
+                 </Text>
+             </View>
+        )}
+
       </ScrollView>
     </SafeAreaView>
   );

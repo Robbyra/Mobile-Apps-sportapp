@@ -1,42 +1,46 @@
-import PostToSocialModal from "@/components/PostToSocialModal";
-import WorkoutCard, { WorkoutItem } from "@/components/WorkoutCard";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebaseConfig";
+// Firebase imports
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../../firebaseConfig';
+
+// Importeer je custom kaartje
+import WorkoutCard, { WorkoutItem } from '@/components/WorkoutCard';
 
 export default function WorkoutsScreen() {
   const router = useRouter();
-  const currentUserId = "user-123";
-  const currentUserName = "Jouw Naam";
 
   const [workouts, setWorkouts] = useState<WorkoutItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedWorkout, setSelectedWorkout] = useState<WorkoutItem | null>(
-    null
-  );
-  const [showPostModal, setShowPostModal] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "workouts"), (snapshot) => {
+    // Haal workouts op, gesorteerd op datum (nieuwste eerst)
+    // Als je oude workouts geen 'timestamp' hebben, gebruik dan: query(collection(db, 'workouts'))
+    const q = query(collection(db, 'workouts'), orderBy('timestamp', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const liveData = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
-          title: data.title || "Untitled Workout",
+          title: data.title || 'Naamloos',
+          date: data.date || 'Geen datum',
+          
+          // BELANGRIJK: Haal het type op! (default naar 'strength' als het mist)
+          type: data.type || 'strength', 
+          
+          // Kracht data ophalen
           sets: data.sets || 0,
           reps: data.reps || 0,
           weight: data.weight || 0,
-          date: data.date || "No date",
+          
+          // Cardio data ophalen
+          distance: data.distance || 0,
+          duration: data.duration || 0,
+          calories: data.calories || 0,
         } as WorkoutItem;
       });
 
@@ -51,56 +55,46 @@ export default function WorkoutsScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
         <ActivityIndicator size="large" color="#FF4D4D" />
-        <Text className="text-gray-400 mt-4">Loading workouts...</Text>
+        <Text className="text-gray-400 mt-4">Workouts laden...</Text>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
+      {/* Header sectie */}
       <View className="flex-row justify-between items-center mb-6">
         <Text className="text-white text-3xl font-bold">Workouts</Text>
-        <TouchableOpacity
+        <TouchableOpacity 
           className="bg-primary px-4 py-2 rounded-lg"
-          onPress={() => router.push("/add-workout")}
+          onPress={() => router.push('/add-workout')}
         >
           <Text className="text-white font-bold">+ Nieuw</Text>
         </TouchableOpacity>
       </View>
-      {/* List of workouts */}
+
+      {/* De Lijst */}
       <FlatList
         data={workouts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View className="flex-row items-center gap-3 mb-3">
-            <View className="flex-1">
-              <WorkoutCard item={item} />
-            </View>
-          </View>
+          <TouchableOpacity 
+            className="mb-3"
+            onPress={() => router.push(`/workout/${item.id}`)}
+          >
+            <WorkoutCard item={item} />
+          </TouchableOpacity>
         )}
         showsVerticalScrollIndicator={false}
-        // Component to render when the list is empty
         ListEmptyComponent={
           <View className="mt-10 items-center">
-            <Text className="text-white text-lg font-bold">
-              No workouts found
-            </Text>
+            <Text className="text-white text-lg font-bold">Geen workouts gevonden</Text>
             <Text className="text-gray-500 text-center mt-2">
-              Add your first workout in Firebase to see it appear here.
+              Start je eerste activiteit door op + Nieuw te klikken.
             </Text>
           </View>
         }
       />
-      {selectedWorkout && (
-        <PostToSocialModal
-          visible={showPostModal}
-          onClose={() => setShowPostModal(false)}
-          type="workout"
-          item={selectedWorkout}
-          currentUserId={currentUserId}
-          currentUserName={currentUserName}
-        />
-      )}
     </SafeAreaView>
   );
 }

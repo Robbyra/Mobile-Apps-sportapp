@@ -138,9 +138,20 @@ export default function SocialScreen() {
         return {
           id: doc.id,
           title: d.title || "Unnamed workout",
+          
+          // BELANGRIJK: Haal ook het type en cardio-data op!
+          type: d.type || 'strength', 
+          
+          // Kracht data
           sets: d.sets || 0,
           reps: d.reps || 0,
           weight: d.weight || 0,
+          
+          // Cardio data (deze ontbraken eerst!)
+          distance: d.distance || 0,
+          duration: d.duration || 0,
+          calories: d.calories || 0,
+
           date: d.date || "",
         } as WorkoutItem;
       });

@@ -3,8 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } fro
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
-
-// Firebase
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 
@@ -50,7 +48,7 @@ export default function AddNutritionScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background p-4">
       
-      {/* --- HEADER MET TERUG KNOP --- */}
+      {/* --- HEADER --- */}
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Ionicons name="arrow-back" size={24} color="#FF4D4D" />
